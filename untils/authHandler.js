@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+const jwt = require("./jwt/jwt.util");
 const userModel = require("../schemas/user.schema");
 const resultNoData = require("./results/result-nodata");
 module.exports = {
@@ -12,7 +12,7 @@ module.exports = {
 
       const token = authHeader.split(" ")[1];
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verifyAccessToken(token);
 
       const user = await userModel.findById(decoded.sub);
       if (!user) {
