@@ -50,7 +50,7 @@ const AuthController = {
 
     if (count >= MAX_REFRESH_TOKEN) {
       const oldest = await refreshTokenModel
-        .findOne(user._id)
+        .findOne({ userId: user._id })
         .sort({ createdAt: 1 });
 
       if (oldest) {

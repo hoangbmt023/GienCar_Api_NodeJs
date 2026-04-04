@@ -9,6 +9,7 @@ const {
   UserFilterRequest,
   UserRegisterRequestValidator,
 } = require("../untils/validators/user/user.validator");
+const { CheckLogin, CheckRole } = require("../untils/authHandler");
 var router = express.Router();
 
 router.post(
@@ -48,6 +49,8 @@ router.post(
 
 router.get(
   "/",
+  CheckLogin,
+  CheckRole("ADMIN"),
   UserFilterRequest,
   validateResult,
   async function (req, res, next) {
