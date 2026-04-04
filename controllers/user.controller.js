@@ -1,4 +1,5 @@
 const { toUserAdminResponse } = require("../mappers/user.mapper");
+const bcrypt = require("bcrypt");
 let userModel = require("../schemas/user.schema");
 const ApiError = require("../untils/errors/api-error");
 const buildPaging = require("../untils/requests/paging-request");
@@ -45,10 +46,46 @@ const UserController = {
       pagination: createPagination({ page, size, total }),
     };
   },
+
+  findById: async function (id) {
+    return await userModel.findById(id);
+  },
+
+  findByEmail: async function (email) {
+    let user = await userModel.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      throw ApiError.badRequest("Tài khoản không tồn tại.");
+    }
+    return user;
+  },
+
+  saveUser: async function (userId, data, session) {
+    let user = await userModel.findById(userId).session(session);
+
+    if (!user) {
+      throw ApiError.badRequest("Tài khoản không tồn tại.");
+    }
+
+    // Update fields
+    Object.assign(user, data);
+
+    await user.save({ session });
+
+    return user;
+  },
+
+  changePassword: async function (data, newPassword, session) {
+    let user = data;
+    // Cập nhật password
+    user.password = newPassword;
+
+    await user.save({ session });
+
+    return user;
+  },
 };
 
 const isEmailExists = async (email) => {
   return await userModel.exists({ email });
 };
-
 module.exports = UserController;

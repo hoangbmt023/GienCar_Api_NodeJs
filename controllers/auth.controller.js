@@ -68,6 +68,19 @@ const AuthController = {
 
     return token;
   },
+
+  findRefreshTokenByToken: async function (token) {
+    let refreshToken = await refreshTokenModel.findOne({ token });
+    return refreshToken;
+  },
+
+  deleteOneRefreshToken: async function (tokenId) {
+    await refreshTokenModel.deleteOne({ _id: tokenId });
+  },
+
+  deleteAllRefreshByUserId: async function (userId) {
+    await refreshTokenModel.deleteMany({ userId });
+  },
 };
 
 module.exports = AuthController;
