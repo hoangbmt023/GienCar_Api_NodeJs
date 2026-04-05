@@ -1,4 +1,4 @@
-const ApiError = require("../untils/errors/api-error");
+const ApiError = require("../utils/errors/api-error");
 
 function createOtp(code, ttlSeconds) {
   return {

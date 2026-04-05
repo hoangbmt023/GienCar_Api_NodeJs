@@ -1,9 +1,9 @@
 const { toUserAdminResponse } = require("../mappers/user.mapper");
 const bcrypt = require("bcrypt");
 let userModel = require("../schemas/user.schema");
-const ApiError = require("../untils/errors/api-error");
-const buildPaging = require("../untils/requests/paging-request");
-const createPagination = require("../untils/results/result-pagination");
+const ApiError = require("../utils/errors/api-error");
+const buildPaging = require("../utils/requests/paging-request");
+const createPagination = require("../utils/results/result-pagination");
 
 const UserController = {
   register: async function (email, password, session) {

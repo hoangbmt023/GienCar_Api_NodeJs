@@ -7,4 +7,5 @@ const toUserAdminResponse = (user) => ({
   updatedAt: user.updatedAt,
 });
 
+
 module.exports = { toUserAdminResponse };

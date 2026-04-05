@@ -25,9 +25,24 @@ module.exports = {
       .withMessage("Mật khẩu phải có chữ hoa, chữ thường và số"),
   ],
 
-  UserFilterRequest: [
+  UserFilterRequestValidator: [
     query("email"),
     query("status").optional().isIn(["active", "pending", "banned"]),
     query("role").optional().isIn(["admin", "user", "sale"]),
+  ],
+
+  UpdateUserProfileRequestValidator: [
+    body("fullName")
+      .isLength({ min: 2, max: 100 })
+      .withMessage("Họ tên phải từ 2 đến 100 ký tự"),
+    ,
+    body("phoneNumber")
+      .optional()
+      .isMobilePhone("vi-VN")
+      .withMessage("Số điện thoại không hợp lệ"),
+    body("description")
+      .optional()
+      .isLength({ max: 500 })
+      .withMessage("Mô tả không được quá 500 ký tự"),
   ],
 };

@@ -2,11 +2,11 @@ let userModel = require("../schemas/user.schema");
 let refreshTokenModel = require("../schemas/refresh-token.schema");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const ApiError = require("../untils/errors/api-error");
+const ApiError = require("../utils/errors/api-error");
 const {
   generateToken,
   generateRefreshToken,
-} = require("../untils/jwt/jwt.util");
+} = require("../utils/jwt/jwt.util");
 
 const MAX_REFRESH_TOKEN = 5;
 
