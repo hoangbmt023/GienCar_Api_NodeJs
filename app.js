@@ -3,8 +3,16 @@ var logger = require("morgan");
 var cookieParser = require("cookie-parser");
 var createError = require("http-errors");
 const { default: mongoose } = require("mongoose");
+const cors = require("cors");
 
 var app = express();
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
 
 app.use(logger("dev"));
 app.use(express.json()); // Parse Json body

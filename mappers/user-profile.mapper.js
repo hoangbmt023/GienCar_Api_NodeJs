@@ -1,3 +1,11 @@
+const toUserAddressResponse = (address) => ({
+  id: address._id,
+  street: address.street,
+  ward: address.ward,
+  district: address.district,
+  city: address.city,
+});
+
 const toUserProfileResponse = (userProfile) => ({
   id: userProfile._id,
   userId: userProfile.userId,
@@ -5,9 +13,7 @@ const toUserProfileResponse = (userProfile) => ({
   description: userProfile.description,
   avatar: userProfile.avatar,
   phoneNumber: userProfile.phoneNumber,
-  addresses: userProfile.addresses ?? [],
-
+  addresses: (userProfile.addresses ?? []).map(toUserAddressResponse),
 });
-
 
 module.exports = { toUserProfileResponse };

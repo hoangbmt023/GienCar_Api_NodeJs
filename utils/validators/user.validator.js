@@ -35,7 +35,6 @@ module.exports = {
     body("fullName")
       .isLength({ min: 2, max: 100 })
       .withMessage("Họ tên phải từ 2 đến 100 ký tự"),
-    ,
     body("phoneNumber")
       .optional()
       .isMobilePhone("vi-VN")
@@ -44,5 +43,19 @@ module.exports = {
       .optional()
       .isLength({ max: 500 })
       .withMessage("Mô tả không được quá 500 ký tự"),
+  ],
+  AddressRequestValidator: [
+    body("street").notEmpty().withMessage("Đường/số nhà không được để trốngg"),
+    body("ward").notEmpty().withMessage("Phường/xã không được để trống"),
+    body("district").notEmpty().withMessage("Quận/huyện không được để trống"),
+    body("city").notEmpty().withMessage("Tỉnh/thành phố không được để trống"),
+  ],
+  UpdateRolesRequestValidator: [
+    body("roles")
+      .exists()
+      .withMessage("roles là bắt buộc")
+      .bail()
+      .isArray({ min: 1 })
+      .withMessage("roles phải là mảng và không được rỗng"),
   ],
 };

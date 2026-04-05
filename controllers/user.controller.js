@@ -4,7 +4,7 @@ let userModel = require("../schemas/user.schema");
 const ApiError = require("../utils/errors/api-error");
 const buildPaging = require("../utils/requests/paging-request");
 const createPagination = require("../utils/results/result-pagination");
-
+const userStatus = require("../model/users/enum/user-status.enum");
 const UserController = {
   register: async function (email, password, session) {
     email = email.toLowerCase().trim();
@@ -48,7 +48,11 @@ const UserController = {
   },
 
   findById: async function (id) {
-    return await userModel.findById(id);
+    var user = await userModel.findById(id);
+    if (!user) {
+      throw ApiError.badRequest("Tài khoản không tồn tại.");
+    }
+    return user;
   },
 
   findByEmail: async function (email) {
@@ -82,6 +86,30 @@ const UserController = {
     await user.save({ session });
 
     return user;
+  },
+
+  deleteUser: async function (userId, session) {
+    await userModel.deleteOne({ _id: userId }, { session });
+  },
+
+  banUser: async function (user, session) {
+    user.status = userStatus.BANNED;
+    await user.save({ session });
+  },
+  unBanUser: async function (user, session) {
+    user.status = userStatus.ACTIVE;
+    await user.save({ session });
+  },
+  updateRole: async function (user, roles, session) {
+    if (!Array.isArray(roles)) {
+      throw new ApiError.badRequest("roles phải là mảng");
+    }
+
+    const normalizedRoles = roles.map((role) => role.toUpperCase());
+
+    user.roles = normalizedRoles;
+
+    await user.save({ session });
   },
 };
 
