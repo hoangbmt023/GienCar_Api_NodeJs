@@ -13,16 +13,10 @@ const upload = multer({
     limits: { fileSize: 5 * 1024 * 1024 },
 });
 const {
-<<<<<<< HEAD
-  UserFilterRequestValidator: UserFilterRequest,
-  UserRegisterRequestValidator,
-  UpdateUserProfileRequestValidator,
-  AddressRequestValidator,
-=======
     UserFilterRequestValidator: UserFilterRequest,
     UserRegisterRequestValidator,
     UpdateUserProfileRequestValidator,
->>>>>>> fcfdbc5 (undone: order & booking)
+    AddressRequestValidator,
 } = require("../utils/validators/user.validator");
 const { CheckLogin, CheckRole } = require("../utils/authHandler");
 const UserProfileController = require("../controllers/user-profile.controller");
@@ -83,92 +77,82 @@ router.get(
 );
 
 router.put(
-<<<<<<< HEAD
-  "/:userId/ban",
-  CheckLogin,
-  CheckRole("ADMIN"),
-  async function (req, res, next) {
-    try {
-      const userId = req.params.userId;
-      const user = await UserController.findById(userId);
+    "/:userId/ban",
+    CheckLogin,
+    CheckRole("ADMIN"),
+    async function (req, res, next) {
+        try {
+            const userId = req.params.userId;
+            const user = await UserController.findById(userId);
 
-      await UserController.banUser(user);
+            await UserController.banUser(user);
 
-      return res.send(resultNoData.success("Khóa người dùng thành công"));
-    } catch (error) {
-      return res.status(400).send(resultNoData.success(error.message));
-    }
-  },
+            return res.send(resultNoData.success("Khóa người dùng thành công"));
+        } catch (error) {
+            return res.status(400).send(resultNoData.success(error.message));
+        }
+    },
 );
 
 router.put(
-  "/:userId/unban",
-  CheckLogin,
-  CheckRole("ADMIN"),
-  async function (req, res, next) {
-    try {
-      const userId = req.params.userId;
-      const user = await UserController.findById(userId);
+    "/:userId/unban",
+    CheckLogin,
+    CheckRole("ADMIN"),
+    async function (req, res, next) {
+        try {
+            const userId = req.params.userId;
+            const user = await UserController.findById(userId);
 
-      await UserController.unBanUser(user);
+            await UserController.unBanUser(user);
 
-      return res.send(resultNoData.success("Mở khóa người dùng thành công"));
-    } catch (error) {
-      return res.status(400).send(resultNoData.success(error.message));
-    }
-  },
+            return res.send(resultNoData.success("Mở khóa người dùng thành công"));
+        } catch (error) {
+            return res.status(400).send(resultNoData.success(error.message));
+        }
+    },
 );
 
 router.put(
-  "/:userId/roles",
-  CheckLogin,
-  CheckRole("ADMIN"),
-  async function (req, res, next) {
-    try {
-      const userId = req.params.userId;
-      const roles = req.body.roles;
-      
-      const user = await UserController.findById(userId);
+    "/:userId/roles",
+    CheckLogin,
+    CheckRole("ADMIN"),
+    async function (req, res, next) {
+        try {
+            const userId = req.params.userId;
+            const roles = req.body.roles;
 
-      await UserController.updateRole(user, roles);
+            const user = await UserController.findById(userId);
 
-      return res.send(
-        resultNoData.success("Update roles người dùng thành công"),
-      );
-    } catch (error) {
-      return res.status(400).send(resultNoData.success(error.message));
-    }
-  },
+            await UserController.updateRole(user, roles);
+
+            return res.send(
+                resultNoData.success("Update roles người dùng thành công"),
+            );
+        } catch (error) {
+            return res.status(400).send(resultNoData.success(error.message));
+        }
+    },
 );
 
 router.delete(
-  "/:userId",
-  CheckLogin,
-  CheckRole("ADMIN"),
-  async function (req, res, next) {
-    try {
-      const userId = req.params.userId;
-      const user = await UserController.findById(userId);
+    "/:userId",
+    CheckLogin,
+    CheckRole("ADMIN"),
+    async function (req, res, next) {
+        try {
+            const userId = req.params.userId;
+            const user = await UserController.findById(userId);
 
-      await UserController.deleteUser(user._id);
+            await UserController.deleteUser(user._id);
 
-      return res.send(resultNoData.success("Xóa người dùng thành công"));
-    } catch (error) {
-      return res.status(400).send(resultNoData.success(error.message));
-    }
-  },
+            return res.send(resultNoData.success("Xóa người dùng thành công"));
+        } catch (error) {
+            return res.status(400).send(resultNoData.success(error.message));
+        }
+    },
 );
 
 router.put(
-  "/me/profile",
-  CheckLogin,
-  upload.single("avatarFile"),
-  UpdateUserProfileRequestValidator,
-  validateResult,
-  async function (req, res, next) {
-    try {
-      const userId = req.user._id;
-=======
     "/me/profile",
     CheckLogin,
     upload.single("avatarFile"),
@@ -177,7 +161,6 @@ router.put(
     async function (req, res, next) {
         try {
             const userId = req.user._id;
->>>>>>> fcfdbc5 (undone: order & booking)
 
             const { fullName, phoneNumber, description } = req.body;
             if (phoneNumber && phoneNumber.trim() !== "") {
@@ -228,109 +211,109 @@ router.put(
 );
 
 router.get("/me/profile", CheckLogin, async function (req, res, next) {
-  try {
-    const userId = req.user._id;
+    try {
+        const userId = req.user._id;
 
-    const userProfile = await UserProfileController.findByUserId(userId);
+        const userProfile = await UserProfileController.findByUserId(userId);
 
-    return res.send(
-      resultDTO.success(
-        toUserProfileResponse(userProfile),
-        "Cập nhật hồ sơ thành công",
-      ),
-    );
-  } catch (error) {
-    return res.status(400).send(resultNoData.success(error.message));
-  }
+        return res.send(
+            resultDTO.success(
+                toUserProfileResponse(userProfile),
+                "Cập nhật hồ sơ thành công",
+            ),
+        );
+    } catch (error) {
+        return res.status(400).send(resultNoData.success(error.message));
+    }
 });
 
 router.post(
-  "/me/addresses",
-  CheckLogin,
-  AddressRequestValidator,
-  validateResult,
-  async function (req, res, next) {
-    try {
-      const userId = req.user._id;
+    "/me/addresses",
+    CheckLogin,
+    AddressRequestValidator,
+    validateResult,
+    async function (req, res, next) {
+        try {
+            const userId = req.user._id;
 
-      const userProfile = await UserProfileController.findByUserId(userId);
+            const userProfile = await UserProfileController.findByUserId(userId);
 
-      const addressList = Array.isArray(req.body) ? req.body : [req.body];
+            const addressList = Array.isArray(req.body) ? req.body : [req.body];
 
-      const saveUserProfile = await UserProfileController.saveUserAddress(
-        userProfile,
-        addressList,
-      );
+            const saveUserProfile = await UserProfileController.saveUserAddress(
+                userProfile,
+                addressList,
+            );
 
-      return res.send(
-        resultDTO.success(
-          toUserProfileResponse(saveUserProfile),
-          "Cập nhật địa chỉ thành công",
-        ),
-      );
-    } catch (error) {
-      return res.status(400).send(resultNoData.success(error.message));
-    }
-  },
+            return res.send(
+                resultDTO.success(
+                    toUserProfileResponse(saveUserProfile),
+                    "Cập nhật địa chỉ thành công",
+                ),
+            );
+        } catch (error) {
+            return res.status(400).send(resultNoData.success(error.message));
+        }
+    },
 );
 
 router.put(
-  "/me/addresses/:addressId",
-  CheckLogin,
-  AddressRequestValidator,
-  validateResult,
-  async function (req, res, next) {
-    try {
-      const addressId = req.params.addressId;
-      const userId = req.user._id;
+    "/me/addresses/:addressId",
+    CheckLogin,
+    AddressRequestValidator,
+    validateResult,
+    async function (req, res, next) {
+        try {
+            const addressId = req.params.addressId;
+            const userId = req.user._id;
 
-      const userProfile = await UserProfileController.findByUserId(userId);
+            const userProfile = await UserProfileController.findByUserId(userId);
 
-      const addressInput = req.body;
+            const addressInput = req.body;
 
-      const saveUserProfile = await UserProfileController.updateUserAddress(
-        userProfile,
-        addressId,
-        addressInput,
-      );
+            const saveUserProfile = await UserProfileController.updateUserAddress(
+                userProfile,
+                addressId,
+                addressInput,
+            );
 
-      return res.send(
-        resultDTO.success(
-          toUserProfileResponse(saveUserProfile),
-          "Cập nhật địa chỉ thành công",
-        ),
-      );
-    } catch (error) {
-      return res.status(400).send(resultNoData.success(error.message));
-    }
-  },
+            return res.send(
+                resultDTO.success(
+                    toUserProfileResponse(saveUserProfile),
+                    "Cập nhật địa chỉ thành công",
+                ),
+            );
+        } catch (error) {
+            return res.status(400).send(resultNoData.success(error.message));
+        }
+    },
 );
 
 router.delete(
-  "/me/addresses/:addressId",
-  CheckLogin,
-  async function (req, res, next) {
-    try {
-      const addressId = req.params.addressId;
-      const userId = req.user._id;
+    "/me/addresses/:addressId",
+    CheckLogin,
+    async function (req, res, next) {
+        try {
+            const addressId = req.params.addressId;
+            const userId = req.user._id;
 
-      const userProfile = await UserProfileController.findByUserId(userId);
+            const userProfile = await UserProfileController.findByUserId(userId);
 
-      const deleteUserAddress = await UserProfileController.deleteUserAddress(
-        userProfile,
-        addressId,
-      );
+            const deleteUserAddress = await UserProfileController.deleteUserAddress(
+                userProfile,
+                addressId,
+            );
 
-      return res.send(
-        resultDTO.success(
-          toUserProfileResponse(deleteUserAddress),
-          "Xóa địa chỉ thành công",
-        ),
-      );
-    } catch (error) {
-      return res.status(400).send(resultNoData.success(error.message));
-    }
-  },
+            return res.send(
+                resultDTO.success(
+                    toUserProfileResponse(deleteUserAddress),
+                    "Xóa địa chỉ thành công",
+                ),
+            );
+        } catch (error) {
+            return res.status(400).send(resultNoData.success(error.message));
+        }
+    },
 );
 
 module.exports = router;
