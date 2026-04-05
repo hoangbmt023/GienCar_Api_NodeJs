@@ -1,5 +1,5 @@
 var express = require("express");
-const { default: mongoose } = require("mongoose");
+const { default: mongoose, isObjectIdOrHexString } = require("mongoose");
 const validateResult = require("../utils/validators/validate-result");
 const userController = require("../controllers/user.controller");
 const userProfileController = require("../controllers/user-profile.controller");
@@ -16,11 +16,13 @@ const {
   UserFilterRequestValidator: UserFilterRequest,
   UserRegisterRequestValidator,
   UpdateUserProfileRequestValidator,
+  AddressRequestValidator,
 } = require("../utils/validators/user.validator");
 const { CheckLogin, CheckRole } = require("../utils/authHandler");
 const UserProfileController = require("../controllers/user-profile.controller");
 const ApiError = require("../utils/errors/api-error");
 const { toUserProfileResponse } = require("../mappers/user-profile.mapper");
+const UserController = require("../controllers/user.controller");
 var router = express.Router();
 
 router.post(
@@ -82,6 +84,82 @@ router.get(
 );
 
 router.put(
+  "/:userId/ban",
+  CheckLogin,
+  CheckRole("ADMIN"),
+  async function (req, res, next) {
+    try {
+      const userId = req.params.userId;
+      const user = await UserController.findById(userId);
+
+      await UserController.banUser(user);
+
+      return res.send(resultNoData.success("Khóa người dùng thành công"));
+    } catch (error) {
+      return res.status(400).send(resultNoData.success(error.message));
+    }
+  },
+);
+
+router.put(
+  "/:userId/unban",
+  CheckLogin,
+  CheckRole("ADMIN"),
+  async function (req, res, next) {
+    try {
+      const userId = req.params.userId;
+      const user = await UserController.findById(userId);
+
+      await UserController.unBanUser(user);
+
+      return res.send(resultNoData.success("Mở khóa người dùng thành công"));
+    } catch (error) {
+      return res.status(400).send(resultNoData.success(error.message));
+    }
+  },
+);
+
+router.put(
+  "/:userId/roles",
+  CheckLogin,
+  CheckRole("ADMIN"),
+  async function (req, res, next) {
+    try {
+      const userId = req.params.userId;
+      const roles = req.body.roles;
+      
+      const user = await UserController.findById(userId);
+
+      await UserController.updateRole(user, roles);
+
+      return res.send(
+        resultNoData.success("Update roles người dùng thành công"),
+      );
+    } catch (error) {
+      return res.status(400).send(resultNoData.success(error.message));
+    }
+  },
+);
+
+router.delete(
+  "/:userId",
+  CheckLogin,
+  CheckRole("ADMIN"),
+  async function (req, res, next) {
+    try {
+      const userId = req.params.userId;
+      const user = await UserController.findById(userId);
+
+      await UserController.deleteUser(user._id);
+
+      return res.send(resultNoData.success("Xóa người dùng thành công"));
+    } catch (error) {
+      return res.status(400).send(resultNoData.success(error.message));
+    }
+  },
+);
+
+router.put(
   "/me/profile",
   CheckLogin,
   upload.single("avatarFile"),
@@ -131,6 +209,112 @@ router.put(
         resultDTO.success(
           toUserProfileResponse(saveUserProfile),
           "Cập nhật hồ sơ thành công",
+        ),
+      );
+    } catch (error) {
+      return res.status(400).send(resultNoData.success(error.message));
+    }
+  },
+);
+
+router.get("/me/profile", CheckLogin, async function (req, res, next) {
+  try {
+    const userId = req.user._id;
+
+    const userProfile = await UserProfileController.findByUserId(userId);
+
+    return res.send(
+      resultDTO.success(
+        toUserProfileResponse(userProfile),
+        "Cập nhật hồ sơ thành công",
+      ),
+    );
+  } catch (error) {
+    return res.status(400).send(resultNoData.success(error.message));
+  }
+});
+
+router.post(
+  "/me/addresses",
+  CheckLogin,
+  AddressRequestValidator,
+  validateResult,
+  async function (req, res, next) {
+    try {
+      const userId = req.user._id;
+
+      const userProfile = await UserProfileController.findByUserId(userId);
+
+      const addressList = Array.isArray(req.body) ? req.body : [req.body];
+
+      const saveUserProfile = await UserProfileController.saveUserAddress(
+        userProfile,
+        addressList,
+      );
+
+      return res.send(
+        resultDTO.success(
+          toUserProfileResponse(saveUserProfile),
+          "Cập nhật địa chỉ thành công",
+        ),
+      );
+    } catch (error) {
+      return res.status(400).send(resultNoData.success(error.message));
+    }
+  },
+);
+
+router.put(
+  "/me/addresses/:addressId",
+  CheckLogin,
+  AddressRequestValidator,
+  validateResult,
+  async function (req, res, next) {
+    try {
+      const addressId = req.params.addressId;
+      const userId = req.user._id;
+
+      const userProfile = await UserProfileController.findByUserId(userId);
+
+      const addressInput = req.body;
+
+      const saveUserProfile = await UserProfileController.updateUserAddress(
+        userProfile,
+        addressId,
+        addressInput,
+      );
+
+      return res.send(
+        resultDTO.success(
+          toUserProfileResponse(saveUserProfile),
+          "Cập nhật địa chỉ thành công",
+        ),
+      );
+    } catch (error) {
+      return res.status(400).send(resultNoData.success(error.message));
+    }
+  },
+);
+
+router.delete(
+  "/me/addresses/:addressId",
+  CheckLogin,
+  async function (req, res, next) {
+    try {
+      const addressId = req.params.addressId;
+      const userId = req.user._id;
+
+      const userProfile = await UserProfileController.findByUserId(userId);
+
+      const deleteUserAddress = await UserProfileController.deleteUserAddress(
+        userProfile,
+        addressId,
+      );
+
+      return res.send(
+        resultDTO.success(
+          toUserProfileResponse(deleteUserAddress),
+          "Xóa địa chỉ thành công",
         ),
       );
     } catch (error) {
