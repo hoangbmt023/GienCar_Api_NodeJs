@@ -23,25 +23,37 @@ app.use(cookieParser()); // Dọc cookie từ request
 app.use("/", require("./routes/index"));
 app.use("/api/users", require("./routes/user.route"));
 app.use("/api/auth", require("./routes/auth.route"));
+app.use("/api/categories", require("./routes/category.route"));
+app.use("/api/menus", require("./routes/menu.route"));
+app.use("/api/brandes", require("./routes/brand.route"));
+app.use("/api/colors", require("./routes/color.route"));
+app.use("/api/booking-time-slots", require("./routes/bookingTimeSlot.route"));
+app.use("/api/locations", require("./routes/location.route"));
+app.use("/api/banners", require("./routes/banner.route"));
+app.use("/api/branches", require("./routes/branch.route"));
+app.use("/api/car-series", require("./routes/car-series.route"));
+app.use("/api/cars", require("./routes/car.route"));
+
 // Connect Mongo Db
-mongoose.connect("mongodb://mongodb/giencar_api_node?replicaSet=rs0");
-mongoose.connection.on("connected", function () {
-  console.log("Đã kết nối vối db.");
-});
+//mongoose.connect("mongodb://mongodb/giencar_api_node?replicaSet=rs0");
+mongoose.connect('mongodb://localhost:27017/giencarnodejs');
+mongoose.connection.on('connected', function () {
+    console.log("connected");
+})
 
 mongoose.connection.on("disconnected", function () {
-  console.log("Kết nối vối db thất bại.");
+    console.log("Kết nối vối db thất bại.");
 });
 
 // error handler
 app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
+    // set locals, only providing error in development
+    res.locals.message = err.message;
+    res.locals.error = req.app.get("env") === "development" ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.send(err.message);
+    // render the error page
+    res.status(err.status || 500);
+    res.send(err.message);
 });
 
 module.exports = app;
