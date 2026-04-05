@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.9.0",
     "cookie-parser": "^1.4.7",
     "crypto": "^1.0.1",
     "debug": "^4.4.3",
@@ -26,6 +27,7 @@
     "nodemailer": "^8.0.4",
     "nodemon": "^3.1.14",
     "slugify": "^1.6.9",
+    "streamifier": "^0.1.1",
     "uuid": "^13.0.0"
   }
 }

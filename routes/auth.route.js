@@ -1,12 +1,12 @@
 var express = require("express");
-const resultNoData = require("../untils/results/result-nodata");
-const resultDTO = require("../untils/results/result.dto");
-const jwtUntil = require("../untils/jwt/jwt.util");
-const generatorOtp = require("../untils/otp/otp-generator.util");
+const resultNoData = require("../utils/results/result-nodata");
+const resultDTO = require("../utils/results/result.dto");
+const jwtUntil = require("../utils/jwt/jwt.util");
+const generatorOtp = require("../utils/otp/otp-generator.util");
 const otpModel = require("../model/otp");
-const otpMemory = require("../untils/cache/otp-memory-store");
-const otpRateLimiter = require("../untils/otp/otp-rate-limiter");
-const sendEmail = require("../untils/email.util");
+const otpMemory = require("../utils/cache/otp-memory-store");
+const otpRateLimiter = require("../utils/otp/otp-rate-limiter");
+const sendEmail = require("../utils/email.util");
 const {
   UserLoginRequestValidator,
   RefreshTokenRequestValidator,
@@ -17,12 +17,12 @@ const {
   ForgotPasswordRequestValidator,
   VerifyForgotPasswordRequestValidator,
   ResetPasswordRequestValidator,
-} = require("../untils/validators/user/auth.validator");
-const validateResult = require("../untils/validators/validate-result");
+} = require("../utils/validators/auth.validator");
+const validateResult = require("../utils/validators/validate-result");
 const AuthController = require("../controllers/auth.controller");
-const ApiError = require("../untils/errors/api-error");
+const ApiError = require("../utils/errors/api-error");
 const UserController = require("../controllers/user.controller");
-const { CheckLogin, CheckRole } = require("../untils/authHandler");
+const { CheckLogin, CheckRole } = require("../utils/authHandler");
 var router = express.Router();
 
 router.post(
