@@ -33,7 +33,7 @@ const {
 const validateResult = require("../utils/validators/validate-result");
 
 // ================= GET ALL =================
-router.get("/", async function (req, res) {
+router.get("/", async function (req, res, next) {
     try {
         const { page, size, skip, sort } = buildPaging(req.query);
 
@@ -68,7 +68,7 @@ router.post(
     upload.single("logoFile"),
     CreateBrandRequestValidator,
     validateResult,
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             const { name, country } = req.body;
 
@@ -111,7 +111,7 @@ router.put(
     upload.single("logoFile"),
     UpdateBrandRequestValidator,
     validateResult,
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             const brand = await brandController.findById(req.params.id);
 
@@ -164,7 +164,7 @@ router.delete(
     "/:id",
     CheckLogin,
     CheckRole("ADMIN"),
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             await brandController.deleteById(req.params.id);
 

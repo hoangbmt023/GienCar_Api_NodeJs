@@ -26,7 +26,7 @@ const {
 const validateResult = require("../utils/validators/validate-result");
 
 // ================= GET ALL ACTIVE =================
-router.get("/", async function (req, res) {
+router.get("/", async function (req, res, next) {
     try {
         const { page, size, skip, sort } = buildPaging(req.query);
 
@@ -54,7 +54,7 @@ router.get("/", async function (req, res) {
 });
 
 // ================= GET ALL ADMIN =================
-router.get("/admin", async function (req, res) {
+router.get("/admin", async function (req, res, next) {
     try {
         const { page, size, skip, sort } = buildPaging(req.query);
 
@@ -82,7 +82,7 @@ router.get("/admin", async function (req, res) {
 });
 
 // ================= GET BY ID =================
-router.get("/:id", async function (req, res) {
+router.get("/:id", async function (req, res, next) {
     try {
         let branch = await branchController.findById(req.params.id);
 
@@ -106,7 +106,7 @@ router.post(
     CheckRole("ADMIN"),
     CreateBranchRequestValidator,
     validateResult,
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             const {
                 name,
@@ -144,7 +144,7 @@ router.put(
     CheckRole("ADMIN"),
     UpdateBranchRequestValidator,
     validateResult,
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             let branch = await branchController.findById(req.params.id);
 
@@ -177,7 +177,7 @@ router.delete(
     "/:id",
     CheckLogin,
     CheckRole("ADMIN"),
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             await branchController.deleteById(req.params.id);
 
@@ -191,7 +191,7 @@ router.delete(
 );
 
 // ================= TOGGLE ACTIVE =================
-router.patch("/:id/toggle", async function (req, res) {
+router.patch("/:id/toggle", async function (req, res, next) {
     try {
         let branch = await branchController.findById(req.params.id);
 

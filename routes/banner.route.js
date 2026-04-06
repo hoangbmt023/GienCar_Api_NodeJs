@@ -31,7 +31,7 @@ router.get(
     "/",
     GetBannerRequestValidator,
     validateResult,
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             const { position } = req.query;
             const now = new Date();
@@ -82,7 +82,7 @@ router.post(
     ]),
     CreateBannerRequestValidator,
     validateResult,
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             const {
                 title,
@@ -155,7 +155,7 @@ router.put(
     CheckRole("ADMIN"),
     MoveBannerRequestValidator,
     validateResult,
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             const { bannerId, order } = req.body;
 
@@ -191,7 +191,7 @@ router.delete(
     CheckRole("ADMIN"),
     DeleteBannerRequestValidator,
     validateResult,
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             const { bannerId } = req.body;
 
