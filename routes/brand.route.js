@@ -20,6 +20,7 @@ const createPagination = require("../utils/results/result-pagination");
 
 const { toBrandResponse, toBrandListResponse } = require("../mappers/brand.mapper");
 
+const { CheckLogin, CheckRole } = require("../utils/authHandler");
 
 // ================= GET ALL =================
 router.get("/", async function (req, res, next) {
@@ -50,7 +51,7 @@ router.get("/", async function (req, res, next) {
 
 
 // ================= CREATE =================
-router.post("/", upload.single("logoFile"), async function (req, res, next) {
+router.post("/", CheckLogin, CheckRole("ADMIN"), upload.single("logoFile"), async function (req, res, next) {
     try {
         const { name, country } = req.body;
 
@@ -89,7 +90,7 @@ router.post("/", upload.single("logoFile"), async function (req, res, next) {
 
 
 // ================= UPDATE =================
-router.put("/:id", upload.single("logoFile"), async function (req, res, next) {
+router.put("/:id", CheckLogin, CheckRole("ADMIN"), upload.single("logoFile"), async function (req, res, next) {
     try {
         const brand = await brandController.findById(req.params.id);
 
@@ -130,7 +131,7 @@ router.put("/:id", upload.single("logoFile"), async function (req, res, next) {
 
 
 // ================= DELETE =================
-router.delete("/:id", async function (req, res, next) {
+router.delete("/:id", CheckLogin, CheckRole("ADMIN"), async function (req, res, next) {
     try {
         await brandController.deleteById(req.params.id);
 

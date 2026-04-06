@@ -20,6 +20,7 @@ const createPagination = require("../utils/results/result-pagination");
 
 const { toColorResponse, toColorListResponse } = require("../mappers/color.mapper");
 
+const { CheckLogin, CheckRole } = require("../utils/authHandler");
 
 // ================= GET ALL =================
 router.get("/", async function (req, res) {
@@ -81,7 +82,7 @@ router.get("/slug/:slug", async function (req, res) {
 
 
 // ================= CREATE =================
-router.post("/", upload.single("imageFile"), async function (req, res) {
+router.post("/", CheckLogin, CheckRole("ADMIN"), upload.single("imageFile"), async function (req, res) {
     try {
         let { name, description } = req.body;
 
@@ -116,7 +117,7 @@ router.post("/", upload.single("imageFile"), async function (req, res) {
 
 
 // ================= UPDATE =================
-router.put("/:id", upload.single("imageFile"), async function (req, res) {
+router.put("/:id", CheckLogin, CheckRole("ADMIN"), upload.single("imageFile"), async function (req, res) {
     try {
         let color = await colorController.findById(req.params.id);
 
@@ -133,7 +134,7 @@ router.put("/:id", upload.single("imageFile"), async function (req, res) {
         color.name = newName;
         color.description = req.body.description ?? color.description;
 
-        // ✅ upload + delete old image
+        // upload + delete old image
         if (req.file) {
             if (color.imageUrl) {
                 await mediaUtil.deleteByUrl(color.imageUrl, "image");
@@ -155,7 +156,7 @@ router.put("/:id", upload.single("imageFile"), async function (req, res) {
 
 
 // ================= DELETE =================
-router.delete("/:id", async function (req, res) {
+router.delete("/:id", CheckLogin, CheckRole("ADMIN"), async function (req, res) {
     try {
         let color = await colorController.findById(req.params.id);
 

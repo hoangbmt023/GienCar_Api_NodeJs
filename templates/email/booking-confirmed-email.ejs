@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Xác nhận lịch lái thử - GienCar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0A0A0A;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #D1D1D1;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .wrapper {
+            max-width: 680px;
+            margin: 40px auto;
+            background: #121212;
+            overflow: hidden;
+            border: 1px solid #1C1C1C;
+        }
+
+        .header {
+            padding: 50px 40px;
+            text-align: center;
+            background: #0A0A0A;
+            border-bottom: 1px solid #2F2F2F;
+        }
+
+        .header-logo {
+            font-size: 36px;
+            font-weight: 300;
+            color: #FFFFFF;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .header-sub {
+            font-size: 11px;
+            color: #888888;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10b981;
+            color: #34d399;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 10px;
+            padding: 8px 24px;
+            margin-top: 25px;
+            font-weight: 500;
+        }
+
+        .content {
+            padding: 50px 40px;
+        }
+
+        .greeting {
+            font-size: 18px;
+            font-weight: 300;
+            color: #FFFFFF;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .intro {
+            font-size: 14px;
+            color: #A0A0A0;
+            line-height: 1.8;
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+
+        .highlight {
+            color: #FFFFFF;
+            font-weight: 500;
+        }
+
+        .info-block {
+            background: #1C1C1C;
+            padding: 30px;
+            margin-bottom: 40px;
+            border-left: 2px solid #2F2F2F;
+        }
+
+        .info-block-title {
+            font-size: 12px;
+            color: #FFFFFF;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .info-table td {
+            padding: 12px 0;
+            border-bottom: 1px solid #2F2F2F;
+        }
+
+        .info-table tr:last-child td {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 35%;
+            vertical-align: top;
+            padding-top: 2px;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #FFFFFF;
+            font-weight: 300;
+            line-height: 1.5;
+        }
+
+        .cta-container {
+            text-align: center;
+            margin: 60px 0 20px;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background: #FFFFFF;
+            color: #0A0A0A;
+            padding: 16px 50px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .footer {
+            padding: 50px 40px;
+            background: #0A0A0A;
+            text-align: center;
+            border-top: 1px solid #2F2F2F;
+        }
+
+        .footer-logo {
+            font-size: 20px;
+            color: #FFFFFF;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
+        .footer-text {
+            font-size: 10px;
+            color: #666666;
+            line-height: 2;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .wrapper {
+                margin: 0;
+                width: 100%;
+                border: none;
+            }
+
+            .header,
+            .content,
+            .footer {
+                padding: 30px 20px;
+            }
+
+            .info-label {
+                display: block;
+                width: 100%;
+                margin-bottom: 4px;
+                border: none;
+            }
+
+            .info-value {
+                display: block;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-logo">GIENCAR</div>
+            <div class="header-sub">Exclusive Showroom</div>
+            <div class="badge">Xác Nhận Lái Thử</div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+            <div class="greeting">
+                Kính chào, <span>
+                    <%= booking.name %>
+                </span>
+            </div>
+
+            <p class="intro">
+                Lịch đăng ký lái thử xe của bạn đã được GienCar
+                <span class="highlight">xác nhận thành công</span>.
+                Xin vui lòng mang theo giấy phép lái xe hợp lệ khi đến tham gia trải nghiệm.
+            </p>
+
+            <div class="info-block">
+                <div class="info-block-title">CHI TIẾT LỊCH HẸN</div>
+
+                <table class="info-table" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="info-label">Mẫu xe</td>
+                        <td class="info-value highlight">
+                            <%= carName %>
+                                <br />
+
+                                <% if (carImageUrl) { %>
+                                    <img src="<%= carImageUrl %>" alt="Car Image"
+                                        style="max-width: 150px; margin-top: 10px; border-radius: 4px;" />
+                                    <% } %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="info-label">Thời gian</td>
+                        <td class="info-value">
+                            <%= new Date(booking.bookingDate).toLocaleDateString("vi-VN") %>
+
+                                <% if (booking.timeSlot) { %>
+                                    | Khung giờ: <%= booking.timeSlot %>
+                                        <% } %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="info-label">Người đăng ký</td>
+                        <td class="info-value">
+                            <%= booking.name %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="info-label">Số điện thoại</td>
+                        <td class="info-value">
+                            <%= booking.phone %>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="info-label">Email</td>
+                        <td class="info-value">
+                            <%= booking.email %>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="cta-container">
+                <p style="margin-top: 25px; font-size: 13px; color: #A0A0A0; font-weight: 300;">
+                    Nếu bạn cần thay đổi lịch hẹn, vui lòng liên hệ hotline của chúng tôi.
+                </p>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <div class="footer-logo">GIENCAR</div>
+            <p class="footer-text">
+                Trải nghiệm sự khác biệt<br /><br />
+                Đây là email tự động, vui lòng không phản hồi.<br />
+                &#169; 2026 GienCar. Đã đăng ký bản quyền.
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -13,6 +13,7 @@ const createPagination = require("../utils/results/result-pagination");
 
 const { toCategoryResponse, toCategoryListResponse } = require("../mappers/category.mapper");
 
+const { CheckLogin, CheckRole } = require("../utils/authHandler");
 
 // ================= GET ALL =================
 router.get("/", async function (req, res, next) {
@@ -58,7 +59,7 @@ router.get("/:id", async function (req, res, next) {
 
 
 // ================= CREATE =================
-router.post("/", async function (req, res, next) {
+router.post("/", CheckLogin, CheckRole("ADMIN"), async function (req, res, next) {
     try {
         let { name, description } = req.body;
 
@@ -88,7 +89,7 @@ router.post("/", async function (req, res, next) {
 
 
 // ================= UPDATE =================
-router.put("/:id", async function (req, res, next) {
+router.put("/:id", CheckLogin, CheckRole("ADMIN"), async function (req, res, next) {
     try {
         let category = await categoryController.findById(req.params.id);
 
@@ -119,7 +120,7 @@ router.put("/:id", async function (req, res, next) {
 
 
 // ================= DELETE =================
-router.delete("/:id", async function (req, res, next) {
+router.delete("/:id", CheckLogin, CheckRole("ADMIN"), async function (req, res, next) {
     try {
         await categoryController.deleteById(req.params.id);
 

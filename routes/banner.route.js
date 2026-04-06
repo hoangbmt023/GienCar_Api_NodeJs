@@ -16,6 +16,8 @@ const ApiError = require("../utils/errors/api-error");
 const BannerPosition = require("../model/banner/enum/banner-position.enum");
 const { toBannerListResponse } = require("../mappers/banner.mapper");
 
+const { CheckLogin, CheckRole } = require("../utils/authHandler");
+
 
 // ================= GET ACTIVE =================
 router.get("/", async function (req, res, next) {
@@ -61,7 +63,7 @@ router.get("/", async function (req, res, next) {
 
 // ================= CREATE =================
 router.post(
-    "/",
+    "/", CheckLogin, CheckRole("ADMIN"),
     upload.fields([
         { name: "imageFile", maxCount: 1 },
         { name: "videoFile", maxCount: 1 },
@@ -130,7 +132,7 @@ router.post(
 
 
 // ================= MOVE =================
-router.put("/move", async function (req, res, next) {
+router.put("/move", CheckLogin, CheckRole("ADMIN"), async function (req, res, next) {
     try {
         const { bannerId, newIndex } = req.body;
 
@@ -158,7 +160,7 @@ router.put("/move", async function (req, res, next) {
 
 
 // ================= DELETE =================
-router.delete("/", async function (req, res, next) {
+router.delete("/", CheckLogin, CheckRole("ADMIN"), async function (req, res, next) {
     try {
         const { id } = req.body;
 

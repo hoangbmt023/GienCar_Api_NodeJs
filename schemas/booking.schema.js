@@ -16,7 +16,11 @@ const BookingSchema = new mongoose.Schema(
 
         bookingDate: { type: Date, required: true },
 
-        timeSlot: { type: String, default: null },
+        timeSlot: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "timeSlot",
+            default: null
+        },
 
         status: {
             type: String,

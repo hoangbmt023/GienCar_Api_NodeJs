@@ -9,6 +9,8 @@ const ApiError = require("../utils/errors/api-error");
 
 const { toSpecificationResponse } = require("../mappers/specification.mapper");
 
+const { CheckLogin, CheckRole } = require("../utils/authHandler");
+
 // relation
 const Car = require("../schemas/car.schema");
 
@@ -32,7 +34,7 @@ router.get("/:carId/specifications", async function (req, res, next) {
 
 
 // ================= UPSERT =================
-router.put("/:carId/specifications", async function (req, res, next) {
+router.put("/:carId/specifications", CheckLogin, CheckRole("ADMIN"), async function (req, res, next) {
     try {
         let carId = req.params.carId;
 
@@ -77,7 +79,7 @@ router.put("/:carId/specifications", async function (req, res, next) {
 
 
 // ================= DELETE =================
-router.delete("/:carId/specifications", async function (req, res, next) {
+router.delete("/:carId/specifications", CheckLogin, CheckRole("ADMIN"), async function (req, res, next) {
     try {
         await controller.deleteByCarId(req.params.carId);
 

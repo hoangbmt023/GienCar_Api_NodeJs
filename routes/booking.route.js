@@ -13,6 +13,8 @@ const createPagination = require("../utils/results/result-pagination");
 
 const { toBookingResponse } = require("../mappers/booking.mapper");
 
+const { CheckLogin, CheckRole } = require("../utils/authHandler");
+
 // relation
 const Car = require("../schemas/car.schema");
 
@@ -115,24 +117,16 @@ router.get("/manage/:id", async function (req, res, next) {
 
 
 // ================= CONFIRM BOOKING =================
-router.patch("/manage/:id/confirm", async function (req, res, next) {
+router.patch("/manage/:id/confirm", CheckLogin, CheckRole("SALE", "ADMIN"), async function (req, res, next) {
     try {
-        let { timeSlot } = req.body;
+        const { timeSlot, timeSlotId } = req.body;
 
-        if (!timeSlot) {
-            throw ApiError.badRequest("Thiếu timeSlot");
-        }
+        const slot = timeSlot || timeSlotId;
 
-        let booking = await controller.findById(req.params.id);
-
-        if (booking.status !== "PENDING") {
-            throw ApiError.badRequest("Chỉ có thể xác nhận booking đang PENDING");
-        }
-
-        booking.status = "CONFIRMED";
-        booking.timeSlot = timeSlot;
-
-        await controller.save(booking);
+        const booking = await controller.confirmBooking(
+            req.params.id,
+            slot
+        );
 
         return res.send(
             resultDTO.success(
@@ -146,9 +140,8 @@ router.patch("/manage/:id/confirm", async function (req, res, next) {
     }
 });
 
-
 // ================= CANCEL BOOKING =================
-router.patch("/manage/:id/cancel", async function (req, res, next) {
+router.patch("/manage/:id/cancel", CheckLogin, CheckRole("SALE", "ADMIN"), async function (req, res, next) {
     try {
         let booking = await controller.findById(req.params.id);
 

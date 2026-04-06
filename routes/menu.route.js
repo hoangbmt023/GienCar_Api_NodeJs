@@ -8,6 +8,8 @@ const ApiError = require("../utils/errors/api-error");
 const slugify = require("slugify");
 const { toMenuResponse } = require("../mappers/menu.mapper");
 
+const { CheckLogin, CheckRole } = require("../utils/authHandler");
+
 // ================= GET =================
 router.get("/", async function (req, res) {
     try {
@@ -40,7 +42,7 @@ router.get("/", async function (req, res) {
 
 
 // ================= CREATE =================
-router.post("/", async function (req, res) {
+router.post("/", CheckLogin, CheckRole("ADMIN"), async function (req, res) {
     try {
         const { name, isActive, locale, type, url, target, parentId } = req.body;
 
@@ -94,7 +96,7 @@ router.post("/", async function (req, res) {
 
 
 // ================= DELETE =================
-router.delete("/", async function (req, res) {
+router.delete("/", CheckLogin, CheckRole("ADMIN"), async function (req, res) {
     try {
         const { id } = req.body;
 
@@ -127,7 +129,7 @@ router.delete("/", async function (req, res) {
 
 
 // ================= MOVE =================
-router.patch("/move", async function (req, res) {
+router.patch("/move", CheckLogin, CheckRole("ADMIN"), async function (req, res) {
     try {
         const { menuId, newIndex } = req.body;
 

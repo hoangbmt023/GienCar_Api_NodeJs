@@ -22,9 +22,10 @@ const createPagination = require("../utils/results/result-pagination");
 
 const { toCarSeriesResponse, toCarSeriesListResponse } = require("../mappers/car-series.mapper");
 
+const { CheckLogin, CheckRole } = require("../utils/authHandler");
+
 // relation
 const Brand = require("../schemas/brand.schema");
-
 
 // ================= GET ALL =================
 router.get("/", async (req, res, next) => {
@@ -105,7 +106,7 @@ router.get("/:id", async (req, res, next) => {
 
 
 // ================= CREATE =================
-router.post("/", upload.single("imageFile"), async (req, res, next) => {
+router.post("/", CheckLogin, CheckRole("ADMIN"), upload.single("imageFile"), async (req, res, next) => {
     try {
         let { name, description, brandId, priceFrom, highlight } = req.body;
 
@@ -150,7 +151,7 @@ router.post("/", upload.single("imageFile"), async (req, res, next) => {
 
 
 // ================= UPDATE =================
-router.put("/:id", upload.single("imageFile"), async (req, res, next) => {
+router.put("/:id", CheckLogin, CheckRole("ADMIN"), upload.single("imageFile"), async (req, res, next) => {
     try {
         let s = await controller.findById(req.params.id);
 
@@ -198,7 +199,7 @@ router.put("/:id", upload.single("imageFile"), async (req, res, next) => {
 
 
 // ================= MOVE =================
-router.patch("/move", async (req, res, next) => {
+router.patch("/move", CheckLogin, CheckRole("ADMIN"), async (req, res, next) => {
     try {
         let { id, newIndex } = req.body;
 
@@ -224,7 +225,7 @@ router.patch("/move", async (req, res, next) => {
 
 
 // ================= DELETE =================
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", CheckLogin, CheckRole("ADMIN"), async (req, res, next) => {
     try {
         let s = await controller.findById(req.params.id);
 

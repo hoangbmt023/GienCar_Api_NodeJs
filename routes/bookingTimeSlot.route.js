@@ -12,6 +12,7 @@ const createPagination = require("../utils/results/result-pagination");
 
 const { toTimeSlotResponse, toTimeSlotListResponse } = require("../mappers/bookingTimeSlot.mapper");
 
+const { CheckLogin, CheckRole } = require("../utils/authHandler");
 
 // ================= GET ALL =================
 router.get("/", async function (req, res, next) {
@@ -69,7 +70,7 @@ router.get("/active", async function (req, res, next) {
 
 
 // ================= CREATE =================
-router.post("/", async function (req, res, next) {
+router.post("/", CheckLogin, CheckRole("ADMIN"), async function (req, res, next) {
     try {
         let { timeLabel } = req.body;
 
@@ -96,7 +97,7 @@ router.post("/", async function (req, res, next) {
 
 
 // ================= UPDATE =================
-router.put("/:id", async function (req, res, next) {
+router.put("/:id", CheckLogin, CheckRole("ADMIN"), async function (req, res, next) {
     try {
         let slot = await controller.findById(req.params.id);
 
@@ -124,7 +125,7 @@ router.put("/:id", async function (req, res, next) {
 
 
 // ================= DELETE =================
-router.delete("/:id", async function (req, res, next) {
+router.delete("/:id", CheckLogin, CheckRole("ADMIN"), async function (req, res, next) {
     try {
         await controller.deleteById(req.params.id);
 

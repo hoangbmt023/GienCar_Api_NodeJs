@@ -22,9 +22,10 @@ const createPagination = require("../utils/results/result-pagination");
 
 const { toCarResponse, toCarListResponse } = require("../mappers/car.mapper");
 
+const { CheckLogin, CheckRole } = require("../utils/authHandler");
+
 // relation
 const CarSeries = require("../schemas/car-series.schema");
-
 
 // ================= FILTER =================
 router.get("/", async (req, res, next) => {
@@ -139,7 +140,7 @@ router.get("/:id", async (req, res, next) => {
 
 
 // ================= CREATE =================
-router.post("/", upload.array("imageFiles", 10), async (req, res, next) => {
+router.post("/", CheckLogin, CheckRole("ADMIN"), upload.array("imageFiles", 10), async (req, res, next) => {
     try {
         const {
             name,
@@ -209,7 +210,7 @@ router.post("/", upload.array("imageFiles", 10), async (req, res, next) => {
 });
 
 // ================= UPDATE =================
-router.put("/:id", upload.array("imageFiles", 10), async (req, res, next) => {
+router.put("/:id", CheckLogin, CheckRole("ADMIN"), upload.array("imageFiles", 10), async (req, res, next) => {
     try {
         const car = await controller.findById(req.params.id);
 
@@ -301,7 +302,7 @@ router.put("/:id", upload.array("imageFiles", 10), async (req, res, next) => {
 });
 
 // ================= DELETE =================
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", CheckLogin, CheckRole("ADMIN"), async (req, res, next) => {
     try {
         let car = await controller.findById(req.params.id);
 
@@ -324,7 +325,7 @@ router.delete("/:id", async (req, res, next) => {
 });
 
 // ================= ADD COLOR =================
-router.post("/:id/colors", upload.single("imageFiles"), async (req, res, next) => {
+router.post("/:id/colors", CheckLogin, CheckRole("ADMIN"), upload.single("imageFiles"), async (req, res, next) => {
     try {
         const car = await controller.findById(req.params.id);
 
@@ -376,7 +377,7 @@ router.post("/:id/colors", upload.single("imageFiles"), async (req, res, next) =
 
 
 // ================= REMOVE COLOR =================
-router.delete("/:id/colors/:colorId", async (req, res, next) => {
+router.delete("/:id/colors/:colorId", CheckLogin, CheckRole("ADMIN"), async (req, res, next) => {
     try {
         const car = await controller.findById(req.params.id);
 
@@ -411,7 +412,7 @@ router.delete("/:id/colors/:colorId", async (req, res, next) => {
 
 
 // ================= MOVE IMAGE =================
-router.patch("/:id/images/move", async (req, res, next) => {
+router.patch("/:id/images/move", CheckLogin, CheckRole("ADMIN"), async (req, res, next) => {
     try {
         const { oldIndex, newIndex } = req.query;
 
