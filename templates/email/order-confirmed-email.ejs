@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đơn hàng hoàn tất - GienCar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0A0A0A;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #D1D1D1;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .wrapper {
+            max-width: 680px;
+            margin: 40px auto;
+            background: #121212;
+            overflow: hidden;
+            border: 1px solid #1C1C1C;
+        }
+
+        .header {
+            padding: 50px 40px;
+            text-align: center;
+            background: #0A0A0A;
+            border-bottom: 1px solid #2F2F2F;
+        }
+
+        .header-logo {
+            font-size: 36px;
+            font-weight: 300;
+            color: #FFFFFF;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .header-sub {
+            font-size: 11px;
+            color: #888888;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: rgba(59, 130, 246, 0.1);
+            border: 1px solid #3b82f6;
+            color: #60a5fa;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 10px;
+            padding: 8px 24px;
+            margin-top: 25px;
+            font-weight: 500;
+        }
+
+        .content {
+            padding: 50px 40px;
+        }
+
+        .greeting {
+            font-size: 18px;
+            font-weight: 300;
+            color: #FFFFFF;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .intro {
+            font-size: 14px;
+            color: #A0A0A0;
+            line-height: 1.8;
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+
+        .highlight {
+            color: #FFFFFF;
+            font-weight: 500;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 400;
+            color: #FFFFFF;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 25px;
+            display: inline-block;
+            border-bottom: 1px solid #FFFFFF;
+            padding-bottom: 8px;
+        }
+
+        .info-block {
+            background: #1C1C1C;
+            padding: 30px;
+            margin-bottom: 40px;
+            border-left: 2px solid #2F2F2F;
+        }
+
+        .info-block-title {
+            font-size: 12px;
+            color: #FFFFFF;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .info-table td {
+            padding: 12px 0;
+            border-bottom: 1px solid #2F2F2F;
+        }
+
+        .info-table tr:last-child td {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 35%;
+            vertical-align: top;
+            padding-top: 2px;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #FFFFFF;
+            font-weight: 300;
+            line-height: 1.5;
+        }
+
+        .info-value a {
+            color: #C0C0C0;
+            text-decoration: none;
+            border-bottom: 1px solid #C0C0C0;
+            padding-bottom: 2px;
+        }
+
+        .car-item {
+            background: #0A0A0A;
+            border: 1px solid #2F2F2F;
+            margin-bottom: 40px;
+            padding: 40px 30px;
+        }
+
+        .car-name {
+            font-size: 24px;
+            font-weight: 300;
+            color: #FFFFFF;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .spec-table td {
+            padding: 14px 0;
+            border-bottom: 1px solid #2F2F2F;
+            font-size: 14px;
+            font-weight: 300;
+        }
+
+        .spec-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .spec-table td.lbl {
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 11px;
+            width: 40%;
+        }
+
+        .spec-table td.val {
+            color: #FFFFFF;
+            text-align: right;
+        }
+
+        .car-images {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .car-images-label {
+            font-size: 10px;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .car-image {
+            width: 160px;
+            height: auto;
+            border: 1px solid #2F2F2F;
+            margin: 0 10px;
+            opacity: 0.9;
+        }
+
+        .summary-block {
+            margin-top: 50px;
+            padding-top: 40px;
+            border-top: 1px solid #2F2F2F;
+        }
+
+        .cta-container {
+            text-align: center;
+            margin: 60px 0 20px;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background: #FFFFFF;
+            color: #0A0A0A;
+            padding: 16px 50px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .footer {
+            padding: 50px 40px;
+            background: #0A0A0A;
+            text-align: center;
+            border-top: 1px solid #2F2F2F;
+        }
+
+        .footer-logo {
+            font-size: 20px;
+            color: #FFFFFF;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
+        .footer-text {
+            font-size: 10px;
+            color: #666666;
+            line-height: 2;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .wrapper {
+                margin: 0;
+                width: 100%;
+                border: none;
+            }
+
+            .header,
+            .content,
+            .footer {
+                padding: 30px 20px;
+            }
+
+            .info-label {
+                display: block;
+                width: 100%;
+                margin-bottom: 4px;
+                border: none;
+            }
+
+            .info-value {
+                display: block;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-logo">GIENCAR</div>
+            <div class="header-sub">Exclusive Showroom</div>
+            <div class="badge">Đơn Hàng Hoàn Tất</div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+            <div class="greeting">
+                Kính chào, <span>
+                    <%= order.userName %>
+                </span>
+            </div>
+
+            <p class="intro">
+                Đơn hàng
+                <span class="highlight">
+                    <%= order.orderCode %>
+                </span>
+                của bạn đã được xác nhận hoàn tất.
+                Dưới đây là thông tin nhận xe và chi tiết cấu hình đơn hàng.
+                Vui lòng mang theo giấy tờ tùy thân khi đến nhận xe.
+            </p>
+
+            <!-- THÔNG TIN ĐƠN HÀNG -->
+            <div class="info-block">
+                <div class="info-block-title">THÔNG TIN ĐƠN HÀNG & KHÁCH HÀNG</div>
+
+                <table class="info-table" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="info-label">Mã đơn hàng</td>
+                        <td class="info-value highlight">
+                            <%= order.orderCode %>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="info-label">Người nhận</td>
+                        <td class="info-value">
+                            <%= order.userName %>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="info-label">Số điện thoại</td>
+                        <td class="info-value">
+                            <%= order.userPhone %>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="info-label">Email</td>
+                        <td class="info-value">
+                            <%= order.userEmail %>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="info-label">Địa chỉ</td>
+                        <td class="info-value">
+                            <%= order.userAddress %>
+                        </td>
+                    </tr>
+
+                    <% if (order.description) { %>
+                        <tr>
+                            <td class="info-label">Ghi chú</td>
+                            <td class="info-value">
+                                <%= order.description %>
+                            </td>
+                        </tr>
+                        <% } %>
+                </table>
+            </div>
+
+            <!-- CHI NHÁNH -->
+            <% if (order.deliveryBranch) { %>
+                <div class="info-block">
+                    <div class="info-block-title">ĐỊA ĐIỂM BÀN GIAO XE</div>
+
+                    <table class="info-table">
+                        <tr>
+                            <td class="info-label">Showroom</td>
+                            <td class="info-value">
+                                <%= order.deliveryBranch.branchName %>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">Địa chỉ</td>
+                            <td class="info-value">
+                                <%= order.deliveryBranch.branchAddress %>,
+                                    <%= order.deliveryBranch.branchCity %>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">Hotline</td>
+                            <td class="info-value">
+                                <%= order.deliveryBranch.branchPhone %>
+                            </td>
+                        </tr>
+
+                        <% if (order.deliveryBranch.branchMapUrl) { %>
+                            <tr>
+                                <td class="info-label">Chỉ đường</td>
+                                <td class="info-value">
+                                    <a href="<%= order.deliveryBranch.branchMapUrl %>">KHÁM PHÁ BẢN ĐỒ</a>
+                                </td>
+                            </tr>
+                            <% } %>
+                    </table>
+                </div>
+                <% } %>
+
+                    <div class="section-title">ĐƠN HÀNG XE CHI TIẾT</div>
+
+                    <!-- DANH SÁCH XE -->
+                    <% order.orderItems.forEach(item=> { %>
+                        <div class="car-item">
+                            <div class="car-name">
+                                <%= item.carName %>
+                            </div>
+
+                            <table class="spec-table">
+                                <tr>
+                                    <td class="lbl">Số lượng</td>
+                                    <td class="val">
+                                        <%= item.quantity %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="lbl">Đơn giá</td>
+                                    <td class="val">
+                                        <%= item.price.toLocaleString('vi-VN') %> VNĐ
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="lbl">Mức đặt cọc</td>
+                                    <td class="val">
+                                        <%= item.deposit ? item.deposit.percentage + '%' : '0%' %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="lbl">Thành tiền</td>
+                                    <td class="val highlight">
+                                        <%= item.subtotal.toLocaleString('vi-VN') %> VNĐ
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- ẢNH XE -->
+                            <% if (item?.carColor?.imageUrl) { %>
+                                <div class="car-images">
+                                    <span class="car-images-label">Ngoại thất</span>
+                                    <div>
+                                        <img src="<%= item.carColor.imageUrl.replace('/upload/', '/upload/f_jpg/') %>"
+                                            class="car-image" />
+                                    </div>
+                                </div>
+                                <% } %>
+                        </div>
+                        <% }) %>
+
+                            <!-- TỔNG TIỀN -->
+                            <div class="summary-block">
+                                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+
+                                    <% if (order.totalDeposit && order.totalDeposit> 0) { %>
+                                        <tr>
+                                            <td style="padding:10px 0; color:#ffffff; font-size:14px;">
+                                                Tiền đặt cọc
+                                            </td>
+                                            <td style="padding:10px 0; text-align:right; color:#ffffff;">
+                                                <%= order.totalDeposit.toLocaleString('vi-VN') %> VNĐ
+                                            </td>
+                                        </tr>
+                                        <% } %>
+
+                                            <tr>
+                                                <td style="padding:10px 0; color:#ffffff;">
+                                                    Tổng giá trị đơn hàng
+                                                </td>
+                                                <td style="padding:10px 0; text-align:right; color:#ffffff;">
+                                                    <%= order.totalPrice.toLocaleString('vi-VN') %> VNĐ
+                                                </td>
+                                            </tr>
+
+                                            <% if (order.totalDeposit && order.totalDeposit> 0) { %>
+                                                <tr>
+                                                    <td style="padding:12px 0; color:#ffffff; font-weight:bold;">
+                                                        Số tiền còn lại cần thanh toán
+                                                    </td>
+                                                    <td
+                                                        style="padding:12px 0; text-align:right; color:#ff3b3b; font-weight:bold;">
+                                                        <%= (order.totalPrice -
+                                                            order.totalDeposit).toLocaleString('vi-VN') %> VNĐ
+                                                    </td>
+                                                </tr>
+                                                <% } %>
+
+                                </table>
+                            </div>
+
+                            <div class="cta-container">
+                                <a href="#" class="cta-btn">TRUY CẬP HỒ SƠ</a>
+                                <p style="margin-top: 25px; font-size: 13px; color: #A0A0A0;">
+                                    Đội ngũ của chúng tôi sẽ liên hệ trong thời gian sớm nhất.
+                                </p>
+                            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <div class="footer-logo">GIENCAR</div>
+            <p class="footer-text">
+                Trải nghiệm sự khác biệt<br /><br />
+                Đây là email tự động, vui lòng không phản hồi.<br />
+                &#169; 2026 GienCar. Đã đăng ký bản quyền.
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>
