@@ -20,12 +20,23 @@ const slugify = require("slugify");
 const buildPaging = require("../utils/requests/paging-request");
 const createPagination = require("../utils/results/result-pagination");
 
-const { toCarSeriesResponse, toCarSeriesListResponse } = require("../mappers/car-series.mapper");
+const {
+    toCarSeriesResponse,
+    toCarSeriesListResponse,
+} = require("../mappers/car-series.mapper");
 
 const { CheckLogin, CheckRole } = require("../utils/authHandler");
 
 // relation
 const Brand = require("../schemas/brand.schema");
+
+const {
+    CreateCarSeriesRequestValidator,
+    UpdateCarSeriesRequestValidator,
+    MoveCarSeriesRequestValidator,
+} = require("../utils/validators/carSeries.validator");
+
+const validateResult = require("../utils/validators/validate-result");
 
 // ================= GET ALL =================
 router.get("/", async (req, res, next) => {
@@ -34,7 +45,7 @@ router.get("/", async (req, res, next) => {
 
         let [list, total] = await Promise.all([
             controller.findSeries({}, sort, skip, size),
-            controller.count({})
+            controller.count({}),
         ]);
 
         if (!list.length) {
@@ -48,12 +59,12 @@ router.get("/", async (req, res, next) => {
                 createPagination({ page, size, total })
             )
         );
-
     } catch (e) {
-        next(e);
+        return res
+            .status(e.status || 500)
+            .send(resultNoData.fail(e.message));
     }
 });
-
 
 // ================= FILTER =================
 router.get("/filter", async (req, res, next) => {
@@ -69,7 +80,7 @@ router.get("/filter", async (req, res, next) => {
 
         let [list, total] = await Promise.all([
             controller.findSeries(filter, sort, skip, size),
-            controller.count(filter)
+            controller.count(filter),
         ]);
 
         if (!list.length) {
@@ -83,12 +94,12 @@ router.get("/filter", async (req, res, next) => {
                 createPagination({ page, size, total })
             )
         );
-
     } catch (e) {
-        next(e);
+        return res
+            .status(e.status || 500)
+            .send(resultNoData.fail(e.message));
     }
 });
-
 
 // ================= GET BY ID =================
 router.get("/:id", async (req, res, next) => {
@@ -98,155 +109,187 @@ router.get("/:id", async (req, res, next) => {
         return res.send(
             resultDTO.success(toCarSeriesResponse(s), "Lấy thành công")
         );
-
     } catch (e) {
-        next(e);
+        return res
+            .status(e.status || 500)
+            .send(resultNoData.fail(e.message));
     }
 });
-
 
 // ================= CREATE =================
-router.post("/", CheckLogin, CheckRole("ADMIN"), upload.single("imageFile"), async (req, res, next) => {
-    try {
-        let { name, description, brandId, priceFrom, highlight } = req.body;
+router.post(
+    "/",
+    CheckLogin,
+    CheckRole("ADMIN"),
+    upload.single("imageFile"),
+    CreateCarSeriesRequestValidator,
+    validateResult,
+    async (req, res, next) => {
+        try {
+            let { name, description, brandId, priceFrom, highlight } = req.body;
 
-        if (!name || !brandId) {
-            throw ApiError.badRequest("Thiếu name hoặc brandId");
+            let slug = slugify(name, { lower: true, strict: true });
+
+            let existed = await controller.findOne({ slug });
+            if (existed) throw ApiError.duplicate("Slug đã tồn tại");
+
+            let brand = await Brand.findById(brandId);
+            if (!brand) throw ApiError.notFound("Brand không tồn tại");
+
+            let imageUrl = null;
+
+            if (req.file) {
+                imageUrl = await mediaUtil.upload(
+                    req.file,
+                    "car-series",
+                    "image"
+                );
+            }
+
+            let max = await controller.findMaxOrder();
+            let orderIndex = max.length ? max[0].orderIndex + 1 : 1;
+
+            await controller.create({
+                name,
+                description,
+                brandId,
+                imageUrl,
+                priceFrom,
+                highlight,
+                slug,
+                orderIndex,
+            });
+
+            return res.send(resultNoData.success("Tạo thành công"));
+        } catch (e) {
+            return res
+                .status(e.status || 500)
+                .send(resultNoData.fail(e.message));
         }
-
-        let slug = slugify(name, { lower: true, strict: true });
-
-        let existed = await controller.findOne({ slug });
-        if (existed) throw ApiError.duplicate("Slug đã tồn tại");
-
-        let brand = await Brand.findById(brandId);
-        if (!brand) throw ApiError.notFound("Brand không tồn tại");
-
-        let imageUrl = null;
-
-        if (req.file) {
-            imageUrl = await mediaUtil.upload(req.file, "car-series", "image");
-        }
-
-        let max = await controller.findMaxOrder();
-        let orderIndex = max.length ? max[0].orderIndex + 1 : 1;
-
-        await controller.create({
-            name,
-            description,
-            brandId,
-            imageUrl,
-            priceFrom,
-            highlight,
-            slug,
-            orderIndex
-        });
-
-        return res.send(resultNoData.success("Tạo thành công"));
-
-    } catch (e) {
-        next(e);
     }
-});
-
+);
 
 // ================= UPDATE =================
-router.put("/:id", CheckLogin, CheckRole("ADMIN"), upload.single("imageFile"), async (req, res, next) => {
-    try {
-        let s = await controller.findById(req.params.id);
+router.put(
+    "/:id",
+    CheckLogin,
+    CheckRole("ADMIN"),
+    upload.single("imageFile"),
+    UpdateCarSeriesRequestValidator,
+    validateResult,
+    async (req, res, next) => {
+        try {
+            let s = await controller.findById(req.params.id);
 
-        let newName = req.body.name || s.name;
-        let slug = slugify(newName, { lower: true, strict: true });
+            let newName = req.body.name || s.name;
+            let slug = slugify(newName, { lower: true, strict: true });
 
-        let existed = await controller.findOne({
-            slug,
-            _id: { $ne: s._id }
-        });
+            let existed = await controller.findOne({
+                slug,
+                _id: { $ne: s._id },
+            });
 
-        if (existed) throw ApiError.duplicate("Slug đã tồn tại");
+            if (existed) throw ApiError.duplicate("Slug đã tồn tại");
 
-        if (req.body.brandId) {
-            let brand = await Brand.findById(req.body.brandId);
-            if (!brand) throw ApiError.notFound("Brand không tồn tại");
-            s.brandId = req.body.brandId;
-        }
-
-        // upload + delete old image
-        if (req.file) {
-            if (s.imageUrl) {
-                await mediaUtil.deleteByUrl(s.imageUrl, "image");
+            if (req.body.brandId) {
+                let brand = await Brand.findById(req.body.brandId);
+                if (!brand) throw ApiError.notFound("Brand không tồn tại");
+                s.brandId = req.body.brandId;
             }
 
-            s.imageUrl = await mediaUtil.upload(req.file, "car-series", "image");
+            if (req.file) {
+                if (s.imageUrl) {
+                    await mediaUtil.deleteByUrl(s.imageUrl, "image");
+                }
+
+                s.imageUrl = await mediaUtil.upload(
+                    req.file,
+                    "car-series",
+                    "image"
+                );
+            }
+
+            s.name = newName;
+            s.description = req.body.description ?? s.description;
+            s.priceFrom = req.body.priceFrom ?? s.priceFrom;
+            s.highlight = req.body.highlight ?? s.highlight;
+            s.slug = slug;
+
+            await controller.save(s);
+
+            return res.send(
+                resultDTO.success(toCarSeriesResponse(s), "Cập nhật thành công")
+            );
+        } catch (e) {
+            return res
+                .status(e.status || 500)
+                .send(resultNoData.fail(e.message));
         }
-
-        s.name = newName;
-        s.description = req.body.description ?? s.description;
-        s.priceFrom = req.body.priceFrom ?? s.priceFrom;
-        s.highlight = req.body.highlight ?? s.highlight;
-        s.slug = slug;
-
-        await controller.save(s);
-
-        return res.send(
-            resultDTO.success(toCarSeriesResponse(s), "Cập nhật thành công")
-        );
-
-    } catch (e) {
-        next(e);
     }
-});
-
+);
 
 // ================= MOVE =================
-router.patch("/move", CheckLogin, CheckRole("ADMIN"), async (req, res, next) => {
-    try {
-        let { id, newIndex } = req.body;
+router.patch(
+    "/move",
+    CheckLogin,
+    CheckRole("ADMIN"),
+    MoveCarSeriesRequestValidator,
+    validateResult,
+    async (req, res, next) => {
+        try {
+            let { id, newIndex } = req.body;
 
-        let s = await controller.findById(id);
+            let s = await controller.findById(id);
 
-        let target = await controller.findByOrder(newIndex);
-        if (!target) throw ApiError.badRequest("Index không hợp lệ");
+            let target = await controller.findByOrder(newIndex);
+            if (!target) throw ApiError.badRequest("Index không hợp lệ");
 
-        let oldIndex = s.orderIndex;
+            let oldIndex = s.orderIndex;
 
-        s.orderIndex = newIndex;
-        target.orderIndex = oldIndex;
+            s.orderIndex = newIndex;
+            target.orderIndex = oldIndex;
 
-        await controller.save(s);
-        await controller.save(target);
+            await controller.save(s);
+            await controller.save(target);
 
-        return res.send(resultNoData.success("Move thành công"));
-
-    } catch (e) {
-        next(e);
+            return res.send(resultNoData.success("Move thành công"));
+        } catch (e) {
+            return res
+                .status(e.status || 500)
+                .send(resultNoData.fail(e.message));
+        }
     }
-});
-
+);
 
 // ================= DELETE =================
-router.delete("/:id", CheckLogin, CheckRole("ADMIN"), async (req, res, next) => {
-    try {
-        let s = await controller.findById(req.params.id);
+router.delete(
+    "/:id",
+    CheckLogin,
+    CheckRole("ADMIN"),
+    async (req, res, next) => {
+        try {
+            let s = await controller.findById(req.params.id);
 
-        let deletedIndex = s.orderIndex;
+            let deletedIndex = s.orderIndex;
 
-        await controller.deleteById(req.params.id);
+            await controller.deleteById(req.params.id);
 
-        let list = await controller.findAll();
+            let list = await controller.findAll();
 
-        for (let item of list) {
-            if (item.orderIndex > deletedIndex) {
-                item.orderIndex -= 1;
-                await controller.save(item);
+            for (let item of list) {
+                if (item.orderIndex > deletedIndex) {
+                    item.orderIndex -= 1;
+                    await controller.save(item);
+                }
             }
+
+            return res.send(resultNoData.success("Xóa thành công"));
+        } catch (e) {
+            return res
+                .status(e.status || 500)
+                .send(resultNoData.fail(e.message));
         }
-
-        return res.send(resultNoData.success("Xóa thành công"));
-
-    } catch (e) {
-        next(e);
     }
-});
+);
 
 module.exports = router;

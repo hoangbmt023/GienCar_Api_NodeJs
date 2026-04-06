@@ -20,6 +20,15 @@ const { toOrderResponse, toOrderListResponse } = require("../mappers/order.mappe
 const Car = require("../schemas/car.schema");
 const Branch = require("../schemas/branch.schema");
 
+const {
+    CreateOrderRequestValidator,
+    OrderFilterRequestValidator,
+    ConfirmOrderRequestValidator,
+
+} = require("../utils/validators/order.validator");
+
+const validateResult = require("../utils/validators/validate-result");
+
 const OrderStatus = require("../model/order/enums/order-status.enum");
 
 const { v4: uuidv4 } = require("uuid");
@@ -40,215 +49,235 @@ function getClientIp(req) {
 }
 
 // ================= CREATE =================
-router.post("/", CheckLogin, async function (req, res, next) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+router.post(
+    "/",
+    CheckLogin,
+    CreateOrderRequestValidator,
+    validateResult,
+    async function (req, res, next) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
 
-    try {
-        const userId = req.user?._id || req.body?.userId;
+        try {
+            const userId = req.user?._id || req.body?.userId;
 
-        const {
-            userName,
-            userPhone,
-            userEmail,
-            userAddress,
-            description,
-            items
-        } = req.body || {};
+            const {
+                userName,
+                userPhone,
+                userEmail,
+                userAddress,
+                description,
+                items,
+            } = req.body;
 
-        if (!userName || !userPhone || !userEmail) {
-            throw ApiError.badRequest("Thiếu thông tin người dùng");
-        }
+            const carIds = items.map((i) => i.carId);
+            const cars = await Car.find({ _id: { $in: carIds } }).session(session);
+            const carMap = new Map(cars.map((c) => [c._id.toString(), c]));
 
-        if (!items?.length) {
-            throw ApiError.badRequest("Danh sách sản phẩm rỗng");
-        }
+            let orderItems = [];
+            let totalPrice = 0;
+            let totalDeposit = 0;
 
-        const carIds = items.map(i => i.carId);
-        const cars = await Car.find({ _id: { $in: carIds } }).session(session);
-        const carMap = new Map(cars.map(c => [c._id.toString(), c]));
+            for (let itemReq of items) {
+                let car = carMap.get(itemReq.carId);
+                if (!car) throw ApiError.notFound("Car không tồn tại");
 
-        let orderItems = [];
-        let totalPrice = 0;
-        let totalDeposit = 0;
+                if (car.quantity < itemReq.quantity) {
+                    throw ApiError.badRequest("Không đủ số lượng");
+                }
 
-        for (let itemReq of items) {
-            let car = carMap.get(itemReq.carId);
-            if (!car) throw ApiError.notFound("Car không tồn tại");
+                car.quantity -= itemReq.quantity;
+                await car.save({ session });
 
-            if (car.quantity < itemReq.quantity) {
-                throw ApiError.badRequest("Không đủ số lượng");
+                let color = car.exteriorColors.find(
+                    (c) => String(c.colorId) === String(itemReq.colorId)
+                );
+
+                if (!color) throw ApiError.badRequest("Color không hợp lệ");
+
+                let price = car.price;
+                let subtotal = price * itemReq.quantity;
+
+                let deposit = null;
+
+                if (car.depositPercentage > 0) {
+                    let amount = price * car.depositPercentage * itemReq.quantity;
+
+                    deposit = {
+                        percentage: car.depositPercentage,
+                        amount,
+                    };
+
+                    totalDeposit += amount;
+                }
+
+                totalPrice += subtotal;
+
+                orderItems.push({
+                    carId: car._id,
+                    carName: car.name,
+                    carColor: {
+                        colorId: color.colorId,
+                        imageUrl: color.imageUrl,
+                    },
+                    quantity: itemReq.quantity,
+                    price,
+                    subtotal,
+                    deposit,
+                });
             }
 
-            car.quantity -= itemReq.quantity;
-            await car.save({ session });
-
-            let color = car.exteriorColors.find(
-                c => String(c.colorId) === String(itemReq.colorId)
+            let order = await controller.create(
+                {
+                    orderCode: "ORD-" + uuidv4(),
+                    userId,
+                    userName,
+                    userPhone,
+                    userEmail,
+                    userAddress,
+                    description,
+                    orderItems,
+                    totalPrice,
+                    totalDeposit,
+                    orderDate: new Date(),
+                    status: OrderStatus.PENDING,
+                },
+                session
             );
 
-            if (!color) throw ApiError.badRequest("Color không hợp lệ");
+            await session.commitTransaction();
 
-            let price = car.price;
-            let subtotal = price * itemReq.quantity;
+            return res.send(
+                resultDTO.success(toOrderResponse(order), "Tạo đơn hàng thành công")
+            );
+        } catch (error) {
+            await session.abortTransaction();
 
-            let deposit = null;
-
-            if (car.depositPercentage > 0) {
-                let amount = price * car.depositPercentage * itemReq.quantity;
-
-                deposit = {
-                    percentage: car.depositPercentage,
-                    amount
-                };
-
-                totalDeposit += amount;
-            }
-
-            totalPrice += subtotal;
-
-            orderItems.push({
-                carId: car._id,
-                carName: car.name,
-                carColor: {
-                    colorId: color.colorId,
-                    imageUrl: color.imageUrl
-                },
-                quantity: itemReq.quantity,
-                price,
-                subtotal,
-                deposit
-            });
+            return res
+                .status(error.status || 500)
+                .send(resultNoData.fail(error.message));
+        } finally {
+            session.endSession();
         }
-
-        let order = await controller.create({
-            orderCode: "ORD-" + uuidv4(),
-            userId,
-            userName,
-            userPhone,
-            userEmail,
-            userAddress,
-            description,
-            orderItems,
-            totalPrice,
-            totalDeposit,
-            orderDate: new Date(),
-            status: OrderStatus.PENDING
-        }, session);
-
-        await session.commitTransaction();
-
-        return res.send(resultDTO.success(toOrderResponse(order), "Tạo đơn hàng thành công"));
-
-    } catch (error) {
-        await session.abortTransaction();
-        next(error);
-    } finally {
-        session.endSession();
     }
-});
-
+);
 
 // ================= MY ORDERS =================
-router.get("/my-orders", CheckLogin, async function (req, res, next) {
-    try {
-        const userId = req.user?._id || req.query.userId;
+router.get(
+    "/my-orders",
+    CheckLogin,
+    OrderFilterRequestValidator,
+    validateResult,
+    async function (req, res, next) {
+        try {
+            const userId = req.user?._id || req.query.userId;
 
-        const { page, size, skip, sort } = buildPaging(req.query);
+            const { page, size, skip, sort } = buildPaging(req.query);
 
-        let [data, total] = await Promise.all([
-            controller.findOrders({ userId }, sort, skip, size),
-            controller.count({ userId })
-        ]);
+            let [data, total] = await Promise.all([
+                controller.findOrders({ userId }, sort, skip, size),
+                controller.count({ userId }),
+            ]);
 
-        return res.send(
-            resultList.success(
-                toOrderListResponse(data),
-                "Lấy đơn hàng của tôi",
-                createPagination({ page, size, total })
-            )
-        );
-
-    } catch (error) {
-        next(error);
+            return res.send(
+                resultList.success(
+                    toOrderListResponse(data),
+                    "Lấy đơn hàng của tôi",
+                    createPagination({ page, size, total })
+                )
+            );
+        } catch (error) {
+            return res
+                .status(error.status || 500)
+                .send(resultNoData.fail(error.message));
+        }
     }
-});
+);
 
 
 // ================= SALE =================
-router.get("/sale", CheckLogin, CheckRole("SALE", "ADMIN"), async function (req, res, next) {
-    try {
-        const { page, size, skip, sort } = buildPaging(req.query);
+router.get(
+    "/sale",
+    CheckLogin,
+    CheckRole("SALE", "ADMIN"),
+    OrderFilterRequestValidator,
+    validateResult,
+    async function (req, res, next) {
+        try {
+            const { page, size, skip, sort } = buildPaging(req.query);
 
-        let filter = {};
+            let filter = {};
 
-        if (req.query.status) {
-            const status = req.query.status.toUpperCase();
-            if (!Object.values(OrderStatus).includes(status)) {
-                throw ApiError.badRequest("Status không hợp lệ");
+            // status đã được normalize ở validator
+            if (req.query.status) {
+                filter.status = req.query.status;
             }
-            filter.status = status;
+
+            if (req.query.userPhone) filter.userPhone = req.query.userPhone;
+            if (req.query.orderCode) filter.orderCode = req.query.orderCode;
+
+            let [data, total] = await Promise.all([
+                controller.findOrders(filter, sort, skip, size),
+                controller.count(filter),
+            ]);
+
+            return res.send(
+                resultList.success(
+                    toOrderListResponse(data),
+                    "Danh sách đơn",
+                    createPagination({ page, size, total })
+                )
+            );
+        } catch (error) {
+            return res
+                .status(error.status || 500)
+                .send(resultNoData.fail(error.message));
         }
-
-        if (req.query.userPhone) filter.userPhone = req.query.userPhone;
-        if (req.query.orderCode) filter.orderCode = req.query.orderCode;
-
-        let [data, total] = await Promise.all([
-            controller.findOrders(filter, sort, skip, size),
-            controller.count(filter)
-        ]);
-
-        return res.send(
-            resultList.success(
-                toOrderListResponse(data),
-                "Danh sách đơn",
-                createPagination({ page, size, total })
-            )
-        );
-
-    } catch (error) {
-        next(error);
     }
-});
+);
 
 // ================= VNPAY PAYMENT =================
-router.post("/:id/vnpay-payment", CheckLogin, async function (req, res, next) {
-    try {
-        const userId = req.user?._id || req.body?.userId;
+router.post(
+    "/:id/vnpay-payment",
+    CheckLogin,
+    async function (req, res, next) {
+        try {
+            const userId = req.user?._id || req.body?.userId;
 
-        let order = await controller.findById(req.params.id);
+            let order = await controller.findById(req.params.id);
 
-        if (String(order.userId) !== String(userId)) {
-            throw ApiError.forbidden("Không có quyền");
+            if (String(order.userId) !== String(userId)) {
+                throw ApiError.forbidden("Không có quyền");
+            }
+
+            let amount =
+                order.totalDeposit && order.totalDeposit > 0
+                    ? order.totalDeposit
+                    : order.totalPrice;
+
+            let orderInfo = `Thanh toan don hang ${order.orderCode}`;
+            let clientIp = getClientIp(req);
+
+            const paymentUrl = vnPayService.createPaymentUrl({
+                orderId: order._id.toString(),
+                amount,
+                orderInfo,
+                ip: clientIp,
+            });
+
+            return res.send(
+                resultDTO.success(
+                    { paymentUrl },
+                    "Tạo link thanh toán VNPay thành công"
+                )
+            );
+        } catch (error) {
+            return res
+                .status(error.status || 500)
+                .send(resultNoData.fail(error.message));
         }
-
-        let amount =
-            order.totalDeposit && order.totalDeposit > 0
-                ? order.totalDeposit
-                : order.totalPrice;
-
-        let orderInfo = `Thanh toan don hang ${order.orderCode}`;
-        let clientIp = getClientIp(req);
-
-        const paymentUrl = vnPayService.createPaymentUrl({
-            orderId: order._id.toString(),
-            amount,
-            orderInfo,
-            ip: clientIp
-        });
-
-        return res.send(
-            resultDTO.success(
-                { paymentUrl },
-                "Tạo link thanh toán VNPay thành công"
-            )
-        );
-
-    } catch (error) {
-        next(error);
     }
-});
-
+);
 
 // ================= VNPAY CALLBACK =================
 router.get("/vnpay-callback", async function (req, res, next) {
@@ -295,9 +324,10 @@ router.get("/vnpay-callback", async function (req, res, next) {
                 `${frontendUrl}?success=false&orderId=${order._id}&orderCode=${order.orderCode}&message=Thanh_toan_that_bai`
             );
         }
-
     } catch (error) {
-        next(error);
+        return res.redirect(
+            `${process.env.VNPAY_FRONTEND_RETURN_URL}?success=false&message=Server_error`
+        );
     }
 });
 
@@ -312,10 +342,13 @@ router.get("/:id", CheckLogin, async function (req, res, next) {
             throw ApiError.forbidden("Không có quyền");
         }
 
-        return res.send(resultDTO.success(toOrderResponse(order), "Lấy chi tiết"));
-
+        return res.send(
+            resultDTO.success(toOrderResponse(order), "Lấy chi tiết")
+        );
     } catch (error) {
-        next(error);
+        return res
+            .status(error.status || 500)
+            .send(resultNoData.fail(error.message));
     }
 });
 
@@ -338,131 +371,158 @@ router.patch("/:id/pay", CheckLogin, async function (req, res, next) {
 
         await controller.save(order);
 
-        return res.send(resultDTO.success(toOrderResponse(order), "Đã gửi thanh toán"));
-
+        return res.send(
+            resultDTO.success(toOrderResponse(order), "Đã gửi thanh toán")
+        );
     } catch (error) {
-        next(error);
+        return res
+            .status(error.status || 500)
+            .send(resultNoData.fail(error.message));
     }
 });
-
 
 // ================= CONFIRM PAID =================
-router.patch("/:id/confirm-paid", CheckLogin, CheckRole("SALE", "ADMIN"), async function (req, res, next) {
-    try {
-        let order = await controller.findById(req.params.id);
+router.patch(
+    "/:id/confirm-paid",
+    CheckLogin,
+    CheckRole("SALE", "ADMIN"),
+    async function (req, res, next) {
+        try {
+            let order = await controller.findById(req.params.id);
 
-        if (order.status !== OrderStatus.PAY) {
-            throw ApiError.badRequest("Sai trạng thái");
+            if (order.status !== OrderStatus.PAY) {
+                throw ApiError.badRequest("Sai trạng thái");
+            }
+
+            order.status = OrderStatus.PAID;
+
+            await controller.save(order);
+
+            // gửi email (non-blocking)
+            if (order.userEmail) {
+                emailUtil
+                    .sendOrderPaidEmail(order.userEmail, order)
+                    .catch((err) => {
+                        console.error("Send paid email failed:", err.message);
+                    });
+            }
+
+            return res.send(
+                resultDTO.success(toOrderResponse(order), "Đã xác nhận")
+            );
+        } catch (error) {
+            return res
+                .status(error.status || 500)
+                .send(resultNoData.fail(error.message));
         }
-
-        order.status = OrderStatus.PAID;
-
-        await controller.save(order);
-
-        // gửi email
-        if (order.userEmail) {
-            emailUtil.sendOrderPaidEmail(order.userEmail, order)
-                .catch(err => {
-                    console.error("Send paid email failed:", err.message);
-                });
-        }
-
-        return res.send(
-            resultDTO.success(toOrderResponse(order), "Đã xác nhận")
-        );
-
-    } catch (error) {
-        next(error);
     }
-});
+);
 
 // ================= CONFIRM =================
-router.patch("/:id/confirm", CheckLogin, CheckRole("SALE", "ADMIN"), async function (req, res, next) {
-    try {
-        let { branchId } = req.body || {};
-        if (!branchId) throw ApiError.badRequest("Thiếu branchId");
+router.patch(
+    "/:id/confirm",
+    CheckLogin,
+    CheckRole("SALE", "ADMIN"),
+    ConfirmOrderRequestValidator,
+    validateResult,
+    async function (req, res, next) {
+        try {
+            let { branchId } = req.body;
 
-        let order = await controller.findById(req.params.id);
+            let order = await controller.findById(req.params.id);
 
-        if (order.status !== OrderStatus.PAID) {
-            throw ApiError.badRequest("Chưa thanh toán");
+            if (order.status !== OrderStatus.PAID) {
+                throw ApiError.badRequest("Chưa thanh toán");
+            }
+
+            let branch = await Branch.findById(branchId);
+            if (!branch) throw ApiError.notFound("Branch không tồn tại");
+
+            order.deliveryBranch = {
+                branchId: branch._id,
+                branchName: branch.name,
+                branchAddress: branch.address,
+                branchCity: branch.city,
+                branchPhone: branch.phone,
+                branchEmail: branch.email,
+                branchMapUrl: branch.mapUrl,
+            };
+
+            order.status = OrderStatus.CONFIRMED;
+
+            await controller.save(order);
+
+            // gửi email
+            if (order.userEmail) {
+                emailUtil
+                    .sendOrderConfirmedEmail(order.userEmail, order)
+                    .catch((err) => {
+                        console.error("Send confirmed email failed:", err.message);
+                    });
+            }
+
+            return res.send(
+                resultDTO.success(toOrderResponse(order), "Hoàn tất")
+            );
+        } catch (error) {
+            return res
+                .status(error.status || 500)
+                .send(resultNoData.fail(error.message));
         }
-
-        let branch = await Branch.findById(branchId);
-        if (!branch) throw ApiError.notFound("Branch không tồn tại");
-
-        order.deliveryBranch = {
-            branchId: branch._id,
-            branchName: branch.name,
-            branchAddress: branch.address,
-            branchCity: branch.city,
-            branchPhone: branch.phone,
-            branchEmail: branch.email,
-            branchMapUrl: branch.mapUrl
-        };
-
-        order.status = OrderStatus.CONFIRMED;
-
-        await controller.save(order);
-
-        // gửi email
-        if (order.userEmail) {
-            emailUtil.sendOrderConfirmedEmail(order.userEmail, order)
-                .catch(err => {
-                    console.error("Send confirmed email failed:", err.message);
-                });
-        }
-
-        return res.send(
-            resultDTO.success(toOrderResponse(order), "Hoàn tất")
-        );
-
-    } catch (error) {
-        next(error);
     }
-});
+);
 
 // ================= CANCEL =================
-router.patch("/:id/cancel", CheckLogin, CheckRole("SALE", "ADMIN"), async function (req, res, next) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+router.patch(
+    "/:id/cancel",
+    CheckLogin,
+    CheckRole("SALE", "ADMIN"),
+    async function (req, res, next) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
 
-    try {
-        const userId = req.user?._id || req.body?.userId;
+        try {
+            const userId = req.user?._id || req.body?.userId;
 
-        let order = await controller.findById(req.params.id);
+            let order = await controller.findById(req.params.id);
 
-        if (String(order.userId) !== String(userId)) {
-            throw ApiError.forbidden("Không có quyền");
-        }
-
-        if (![OrderStatus.PENDING, OrderStatus.PAY].includes(order.status)) {
-            throw ApiError.badRequest("Không thể hủy");
-        }
-
-        for (let item of order.orderItems) {
-            let car = await Car.findById(item.carId).session(session);
-            if (car) {
-                car.quantity += item.quantity;
-                await car.save({ session });
+            if (String(order.userId) !== String(userId)) {
+                throw ApiError.forbidden("Không có quyền");
             }
+
+            if (
+                ![OrderStatus.PENDING, OrderStatus.PAY].includes(order.status)
+            ) {
+                throw ApiError.badRequest("Không thể hủy");
+            }
+
+            for (let item of order.orderItems) {
+                let car = await Car.findById(item.carId).session(session);
+                if (car) {
+                    car.quantity += item.quantity;
+                    await car.save({ session });
+                }
+            }
+
+            order.status = OrderStatus.CANCELLED;
+
+            await controller.save(order, session);
+
+            await session.commitTransaction();
+
+            return res.send(
+                resultDTO.success(toOrderResponse(order), "Hủy thành công")
+            );
+        } catch (error) {
+            await session.abortTransaction();
+
+            return res
+                .status(error.status || 500)
+                .send(resultNoData.fail(error.message));
+        } finally {
+            session.endSession();
         }
-
-        order.status = OrderStatus.CANCELLED;
-
-        await controller.save(order, session);
-
-        await session.commitTransaction();
-
-        return res.send(resultDTO.success(toOrderResponse(order), "Hủy thành công"));
-
-    } catch (error) {
-        await session.abortTransaction();
-        next(error);
-    } finally {
-        session.endSession();
     }
-});
-
+);
 
 module.exports = router;

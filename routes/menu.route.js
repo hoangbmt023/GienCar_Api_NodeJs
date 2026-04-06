@@ -10,7 +10,6 @@ const { toMenuResponse } = require("../mappers/menu.mapper");
 
 const { CheckLogin, CheckRole } = require("../utils/authHandler");
 
-// ✅ VALIDATOR
 const {
     CreateMenuRequestValidator,
     DeleteMenuRequestValidator,
@@ -20,7 +19,7 @@ const {
 const validateResult = require("../utils/validators/validate-result");
 
 // ================= GET =================
-router.get("/", async function (req, res) {
+router.get("/", async function (req, res, next) {
     try {
         const { type, locale } = req.query;
 
@@ -56,7 +55,7 @@ router.post(
     CheckRole("ADMIN"),
     CreateMenuRequestValidator,
     validateResult,
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             const { name, isActive, locale, type, url, target, parentId } =
                 req.body;
@@ -114,7 +113,7 @@ router.delete(
     CheckRole("ADMIN"),
     DeleteMenuRequestValidator,
     validateResult,
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             const { id } = req.body;
 
@@ -156,7 +155,7 @@ router.patch(
     CheckRole("ADMIN"),
     MoveMenuRequestValidator,
     validateResult,
-    async function (req, res) {
+    async function (req, res, next) {
         try {
             const { menuId, newIndex } = req.body;
 
