@@ -1,5 +1,0 @@
-# JWT
-JWT_SECRET=GienCar_SieuBiMat_123456789
-JWT_EXPIRES_IN=1h
-JWT_ISSUER=giencar.net
-JWT_AUDIENCE=giencar_client

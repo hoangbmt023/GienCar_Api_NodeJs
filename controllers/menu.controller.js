@@ -1,4 +1,5 @@
 const Menu = require("../schemas/menu.schema");
+const ApiError = require("../utils/errors/api-error");
 
 const MenuController = {
 
@@ -11,7 +12,9 @@ const MenuController = {
     },
 
     findById: async function (id) {
-        return await Menu.findById(id);
+        let menu = await Menu.findById(id);
+        if (!menu) throw ApiError.notFound("Menu không tồn tại");
+        return menu;
     },
 
     findChildren: async function (parentId) {
@@ -28,6 +31,9 @@ const MenuController = {
     },
 
     deleteById: async function (id) {
+        let menu = await Menu.findById(id);
+        if (!menu) throw ApiError.notFound("Menu không tồn tại");
+
         return await Menu.findByIdAndDelete(id);
     },
 

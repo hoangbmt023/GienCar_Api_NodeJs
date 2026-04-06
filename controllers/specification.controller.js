@@ -1,62 +1,33 @@
 const Specification = require("../schemas/specification.schema");
-const Car = require("../schemas/car.schema");
-const ApiError = require("../untils/errors/api-error");
-
-const { toSpecificationResponse } = require("../mappers/specification.mapper");
+const ApiError = require("../utils/errors/api-error");
 
 const SpecificationController = {
 
-    // ================= GET =================
-    getByCarId: async function (carId) {
-        let spec = await Specification.findOne({ carId });
-
-        if (!spec) {
-            throw ApiError.notFound("Specification không tồn tại");
-        }
-
-        return toSpecificationResponse(spec);
+    findOne: async function (filter) {
+        return await Specification.findOne(filter);
     },
 
-    // ================= UPSERT =================
-    upsert: async function (carId, body) {
-
-        // check car tồn tại
-        let car = await Car.findById(carId);
-        if (!car) throw ApiError.notFound("Car không tồn tại");
-
+    findByCarId: async function (carId) {
         let spec = await Specification.findOne({ carId });
-
-        let data = {
-            carId,
-            engine: body.engine,
-            efficiency: body.efficiency,
-            body: body.body,
-            consumption: body.consumption,
-        };
-
-        if (!spec) {
-            // CREATE
-            spec = new Specification(data);
-        } else {
-            // UPDATE
-            Object.assign(spec, data);
-        }
-
-        await spec.save();
-
-        return toSpecificationResponse(spec);
+        if (!spec) throw ApiError.notFound("Specification không tồn tại");
+        return spec;
     },
 
-    // ================= DELETE =================
+    create: async function (data) {
+        let spec = new Specification(data);
+        return await spec.save();
+    },
+
+    save: async function (spec) {
+        return await spec.save();
+    },
+
     deleteByCarId: async function (carId) {
-        let exists = await Specification.exists({ carId });
+        let spec = await Specification.findOne({ carId });
+        if (!spec) throw ApiError.notFound("Specification không tồn tại");
 
-        if (!exists) {
-            throw ApiError.notFound("Specification không tồn tại");
-        }
-
-        await Specification.deleteOne({ carId });
-    },
+        return await Specification.deleteOne({ carId });
+    }
 };
 
 module.exports = SpecificationController;

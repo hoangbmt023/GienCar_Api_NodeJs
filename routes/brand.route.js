@@ -2,52 +2,144 @@ var express = require("express");
 var router = express.Router();
 
 const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
+const upload = multer({
+    storage: multer.memoryStorage(),
+});
+
+const mediaUtil = require("../utils/media.util");
 
 const brandController = require("../controllers/brand.controller");
-const resultNoData = require("../untils/results/result-nodata");
-const resultList = require("../untils/results/result-list");
-const resultDTO = require("../untils/results/result.dto");
-const { CheckLogin, CheckRole } = require("../untils/authHandler");
+const resultNoData = require("../utils/results/result-nodata");
+const resultList = require("../utils/results/result-list");
+const resultDTO = require("../utils/results/result.dto");
+const ApiError = require("../utils/errors/api-error");
 
-// GET
+const slugify = require("slugify");
+const buildPaging = require("../utils/requests/paging-request");
+const createPagination = require("../utils/results/result-pagination");
+
+const { toBrandResponse, toBrandListResponse } = require("../mappers/brand.mapper");
+
+
+// ================= GET ALL =================
 router.get("/", async function (req, res, next) {
     try {
-        let result = await brandController.getAll(req.query);
-        return res.send(resultList.success(result.data, "Lấy danh sách brand thành công", result.pagination));
+        const { page, size, skip, sort } = buildPaging(req.query);
+
+        let [brands, total] = await Promise.all([
+            brandController.findBrands({}, sort, skip, size),
+            brandController.count({})
+        ]);
+
+        if (!brands.length) {
+            return res.send(resultList.success([], "Danh sách rỗng"));
+        }
+
+        return res.send(
+            resultList.success(
+                toBrandListResponse(brands),
+                "Lấy danh sách brand thành công",
+                createPagination({ page, size, total })
+            )
+        );
+
     } catch (error) {
-        return res.status(error.status || 500).send(resultNoData.fail(error.message));
+        next(error);
     }
 });
 
-// CREATE (multipart)
-router.post("/", /* CheckLogin, CheckRole("ADMIN"), */ upload.single("logoFile"), async function (req, res, next) {
+
+// ================= CREATE =================
+router.post("/", upload.single("logoFile"), async function (req, res, next) {
     try {
-        let result = await brandController.create(req.body, req.file);
-        return res.send(resultDTO.success(result, "Tạo brand thành công"));
+        const { name, country } = req.body;
+
+        if (!name) {
+            throw ApiError.badRequest("Thiếu name");
+        }
+
+        const slug = slugify(name, { lower: true, strict: true });
+
+        const existed = await brandController.findOne({ slug });
+        if (existed) {
+            throw ApiError.duplicate("Slug đã tồn tại");
+        }
+
+        let logo = null;
+
+        // upload logo lên cloud
+        if (req.file) {
+            logo = await mediaUtil.upload(req.file, "brands", "image");
+        }
+
+        const brand = await brandController.create({
+            name,
+            country,
+            slug,
+            logo,
+        });
+
+        return res.send(
+            resultDTO.success(toBrandResponse(brand), "Tạo brand thành công")
+        );
     } catch (error) {
-        return res.status(error.status || 500).send(resultNoData.fail(error.message));
+        next(error);
     }
 });
 
-// UPDATE
-router.put("/:id", /* CheckLogin, CheckRole("ADMIN"), */ upload.single("logoFile"), async function (req, res, next) {
+
+// ================= UPDATE =================
+router.put("/:id", upload.single("logoFile"), async function (req, res, next) {
     try {
-        let result = await brandController.update(req.params.id, req.body, req.file);
-        return res.send(resultDTO.success(result, "Cập nhật brand thành công"));
+        const brand = await brandController.findById(req.params.id);
+
+        const newName = req.body.name || brand.name;
+        const slug = slugify(newName, { lower: true, strict: true });
+
+        const existed = await brandController.findOne({
+            slug,
+            _id: { $ne: brand._id },
+        });
+
+        if (existed) {
+            throw ApiError.duplicate("Slug đã tồn tại");
+        }
+
+        brand.name = newName;
+        brand.country = req.body.country ?? brand.country;
+        brand.slug = slug;
+
+        // upload logo mới + xóa logo cũ
+        if (req.file) {
+            if (brand.logo) {
+                await mediaUtil.deleteByUrl(brand.logo, "image");
+            }
+
+            brand.logo = await mediaUtil.upload(req.file, "brands", "image");
+        }
+
+        await brandController.save(brand);
+
+        return res.send(
+            resultDTO.success(toBrandResponse(brand), "Cập nhật brand thành công")
+        );
     } catch (error) {
-        return res.status(error.status || 500).send(resultNoData.fail(error.message));
+        next(error);
     }
 });
 
-// DELETE
-router.delete("/:id", /* CheckLogin, CheckRole("ADMIN"), */ async function (req, res, next) {
+
+// ================= DELETE =================
+router.delete("/:id", async function (req, res, next) {
     try {
-        await brandController.delete(req.params.id);
+        await brandController.deleteById(req.params.id);
+
         return res.send(resultNoData.success("Xóa brand thành công"));
+
     } catch (error) {
-        return res.status(error.status || 500).send(resultNoData.fail(error.message));
+        next(error);
     }
 });
+
 
 module.exports = router;

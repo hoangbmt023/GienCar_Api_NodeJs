@@ -2,18 +2,18 @@ var express = require("express");
 var router = express.Router();
 
 const menuController = require("../controllers/menu.controller");
-const resultNoData = require("../untils/results/result-nodata");
-const resultList = require("../untils/results/result-list");
-const ApiError = require("../untils/errors/api-error");
+const resultNoData = require("../utils/results/result-nodata");
+const resultList = require("../utils/results/result-list");
+const ApiError = require("../utils/errors/api-error");
 const slugify = require("slugify");
 const { toMenuResponse } = require("../mappers/menu.mapper");
 
 // ================= GET =================
 router.get("/", async function (req, res) {
     try {
-        let { type, locale } = req.query;
+        const { type, locale } = req.query;
 
-        let menus = await menuController.findMenus({
+        const menus = await menuController.findMenus({
             type: type?.toUpperCase(),
             locale: locale?.toUpperCase(),
         });
@@ -22,17 +22,19 @@ router.get("/", async function (req, res) {
             return res.send(resultList.success([], "Danh sách rỗng"));
         }
 
-        const buildTree = (parentId = null) => {
-            return menus
+        const buildTree = (parentId = null) =>
+            menus
                 .filter(m => String(m.parentId) === String(parentId))
                 .sort((a, b) => a.orderIndex - b.orderIndex)
                 .map(m => toMenuResponse(m, buildTree(m._id)));
-        };
 
-        return res.send(resultList.success(buildTree(null), "Lấy menu thành công"));
-
+        return res.send(
+            resultList.success(buildTree(null), "Lấy menu thành công")
+        );
     } catch (error) {
-        return res.status(error.status || 500).send(resultNoData.fail(error.message));
+        return res
+            .status(error.status || 500)
+            .send(resultNoData.fail(error.message));
     }
 });
 
@@ -40,15 +42,15 @@ router.get("/", async function (req, res) {
 // ================= CREATE =================
 router.post("/", async function (req, res) {
     try {
-        let { name, isActive, locale, type, url, target, parentId } = req.body;
+        const { name, isActive, locale, type, url, target, parentId } = req.body;
 
         if (!locale?.length || !type?.length) {
             throw ApiError.badRequest("Thiếu locale hoặc type");
         }
 
-        let slug = slugify(name, { lower: true, strict: true });
+        const slug = slugify(name, { lower: true, strict: true });
 
-        let existed = await menuController.findOne({
+        const existed = await menuController.findOne({
             parentId: parentId || null,
             slug,
             type: type[0],
@@ -58,8 +60,7 @@ router.post("/", async function (req, res) {
         if (existed) throw ApiError.duplicate("Slug đã tồn tại");
 
         if (parentId) {
-            let parent = await menuController.findById(parentId);
-            if (!parent) throw ApiError.notFound("Parent không tồn tại");
+            const parent = await menuController.findById(parentId);
 
             if (
                 parent.type[0] !== type[0] ||
@@ -69,8 +70,8 @@ router.post("/", async function (req, res) {
             }
         }
 
-        let max = await menuController.findMaxOrder(parentId);
-        let orderIndex = max.length ? max[0].orderIndex + 1 : 1;
+        const max = await menuController.findMaxOrder(parentId);
+        const orderIndex = max.length ? max[0].orderIndex + 1 : 1;
 
         await menuController.create({
             name,
@@ -84,9 +85,10 @@ router.post("/", async function (req, res) {
         });
 
         return res.send(resultNoData.success("Tạo menu thành công"));
-
     } catch (error) {
-        return res.status(error.status || 500).send(resultNoData.fail(error.message));
+        return res
+            .status(error.status || 500)
+            .send(resultNoData.fail(error.message));
     }
 });
 
@@ -94,30 +96,32 @@ router.post("/", async function (req, res) {
 // ================= DELETE =================
 router.delete("/", async function (req, res) {
     try {
-        let { id } = req.body;
+        const { id } = req.body;
 
-        let menu = await menuController.findById(id);
-        if (!menu) throw ApiError.notFound("Menu không tồn tại");
+        const menu = await menuController.findById(id);
 
-        let children = await menuController.findChildren(id);
-        if (children.length) throw ApiError.badRequest("Menu có con");
+        const children = await menuController.findChildren(id);
+        if (children.length) {
+            throw ApiError.badRequest("Menu có con");
+        }
 
-        let deletedIndex = menu.orderIndex;
-        let parentId = menu.parentId;
+        const deletedIndex = menu.orderIndex;
+        const parentId = menu.parentId;
 
         await menuController.deleteById(id);
 
-        let affected = await menuController.findAffected(parentId, deletedIndex);
+        const affected = await menuController.findAffected(parentId, deletedIndex);
 
-        for (let m of affected) {
+        for (const m of affected) {
             m.orderIndex -= 1;
             await menuController.save(m);
         }
 
         return res.send(resultNoData.success("Xóa menu thành công"));
-
     } catch (error) {
-        return res.status(error.status || 500).send(resultNoData.fail(error.message));
+        return res
+            .status(error.status || 500)
+            .send(resultNoData.fail(error.message));
     }
 });
 
@@ -125,17 +129,16 @@ router.delete("/", async function (req, res) {
 // ================= MOVE =================
 router.patch("/move", async function (req, res) {
     try {
-        let { menuId, newIndex } = req.body;
+        const { menuId, newIndex } = req.body;
 
-        let menu = await menuController.findById(menuId);
-        if (!menu) throw ApiError.notFound("Menu không tồn tại");
-
-        let parentId = menu.parentId;
+        const menu = await menuController.findById(menuId);
+        const parentId = menu.parentId;
 
         let siblings = await menuController.findMenus({ parentId });
-        siblings = siblings.sort((a, b) => a.orderIndex - b.orderIndex);
 
-        siblings = siblings.filter(m => String(m._id) !== String(menuId));
+        siblings = siblings
+            .sort((a, b) => a.orderIndex - b.orderIndex)
+            .filter(m => String(m._id) !== String(menuId));
 
         if (newIndex < 1 || newIndex > siblings.length + 1) {
             throw ApiError.badRequest("Vị trí không hợp lệ");
@@ -149,9 +152,10 @@ router.patch("/move", async function (req, res) {
         }
 
         return res.send(resultNoData.success("Đã di chuyển menu thành công"));
-
     } catch (error) {
-        return res.status(error.status || 500).send(resultNoData.fail(error.message));
+        return res
+            .status(error.status || 500)
+            .send(resultNoData.fail(error.message));
     }
 });
 
