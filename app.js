@@ -7,19 +7,12 @@ const cors = require("cors");
 
 var app = express();
 
-<<<<<<< HEAD
 app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  }),
+    cors({
+        origin: "http://localhost:5173",
+        credentials: true,
+    }),
 );
-=======
-app.use(cors({
-    origin: "http://localhost:5173",
-    credentials: true
-}));
->>>>>>> fcfdbc5 (undone: order & booking)
 
 app.use(logger("dev"));
 app.use(express.json()); // Parse Json body
