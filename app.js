@@ -36,11 +36,12 @@ app.use("/api/cars", require("./routes/car.route"));
 app.use("/api/bookings", require("./routes/booking.route"));
 app.use("/api/cars", require("./routes/specification.route"));
 app.use("/api/orders", require("./routes/order.route"));
+app.use("/api/messages", require("./routes/message.route"));
 
 // Connect Mongo Db
-//mongoose.connect("mongodb://mongodb/giencar_api_node?replicaSet=rs0");
+mongoose.connect("mongodb://mongodb:27017/giencar_api_node?replicaSet=rs0");
 //mongoose.connect('mongodb://localhost:27017/giencarnodejs'); // chạy mongo thường
-mongoose.connect('mongodb://127.0.0.1:27017/giencarnodejs?replicaSet=rs0');
+// mongoose.connect('mongodb://127.0.0.1:27017/giencarnodejs?replicaSet=rs0');
 mongoose.connection.on('connected', function () {
     console.log("connected");
 })
