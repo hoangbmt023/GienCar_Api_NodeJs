@@ -29,6 +29,7 @@
     "nodemailer": "^8.0.4",
     "nodemon": "^3.1.14",
     "slugify": "^1.6.9",
+    "socket.io": "^4.8.3",
     "streamifier": "^0.1.1",
     "uuid": "^13.0.0"
   }

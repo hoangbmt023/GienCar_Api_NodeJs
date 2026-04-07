@@ -25,6 +25,10 @@ const UserSchema = new mongoose.Schema(
       enum: Object.values(UserStatus),
       default: UserStatus.PENDING,
     },
+    lastSeen: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

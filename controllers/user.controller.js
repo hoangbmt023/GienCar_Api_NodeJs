@@ -1,5 +1,4 @@
 const { toUserAdminResponse } = require("../mappers/user.mapper");
-const bcrypt = require("bcrypt");
 let userModel = require("../schemas/user.schema");
 const ApiError = require("../utils/errors/api-error");
 const buildPaging = require("../utils/requests/paging-request");
@@ -110,6 +109,41 @@ const UserController = {
     user.roles = normalizedRoles;
 
     await user.save({ session });
+  },
+
+  updateLastSeen: async function (userId) {
+    await userModel.findByIdAndUpdate(userId, { lastSeen: new Date() });
+  },
+
+  getLastSeen: async function (userId) {
+    const user = await userModel.findById(userId).select("lastSeen");
+    if (!user) {
+      throw ApiError.badRequest("Tài khoản không tồn tại.");
+    }
+    return user.lastSeen;
+  },
+
+  getSaleUsers: async function (query) {
+    const { page, size, skip, sort } = buildPaging(query);
+    let filter = { roles: "SALE" };
+
+    if (query.email) {
+      filter.email = { $regex: query.email, $options: "i" };
+    }
+
+    if (query.status) {
+      filter.status = query.status.toUpperCase();
+    }
+
+    let [data, total] = await Promise.all([
+      userModel.find(filter).sort(sort).skip(skip).limit(size),
+      userModel.countDocuments(filter),
+    ]);
+
+    return {
+      data: data.map(toUserAdminResponse),
+      pagination: createPagination({ page, size, total }),
+    };
   },
 };
 

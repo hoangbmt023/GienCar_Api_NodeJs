@@ -6,6 +6,7 @@
 
 require("dotenv").config();
 var app = require("../app");
+var { SocketServer } = require("../utils/socket-handle.js");
 var debug = require("debug")("nnptud-s4:server");
 var http = require("http");
 /**
@@ -20,7 +21,7 @@ app.set("port", port);
  */
 
 var server = http.createServer(app);
-
+SocketServer(server);
 /**
  * Listen on provided port, on all network interfaces.
  */

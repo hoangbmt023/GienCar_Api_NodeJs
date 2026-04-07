@@ -34,7 +34,6 @@ function createPaymentUrl({ orderId, amount, orderInfo, ip }) {
 
     const sortedParams = sortObject(params);
 
-    // FIX QUAN TRỌNG: build giống Java
     const signData = buildQueryString(sortedParams);
 
     const secureHash = hmacSHA512(config.hashSecret, signData);
