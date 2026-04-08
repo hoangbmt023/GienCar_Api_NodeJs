@@ -33,10 +33,12 @@ router.post(
   UserRegisterRequestValidator,
   validateResult,
   async function (req, res, next) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       let { email, password } = req.body;
 
-      let user = await userController.register(email, password);
+      let user = await userController.register(email, password, session);
 
       await userProfileController.createUserProfile(
         user._id,
@@ -45,13 +47,17 @@ router.post(
         null,
         null,
         null,
+        session,
       );
-
+      await session.commitTransaction();
       res.send(resultNoData.success("Tài khoản đã được đăng ký thành công."));
     } catch (error) {
+      await session.abortTransaction();
       return res
         .status(error.status || 500)
         .send(resultNoData.fail(error.message));
+    } finally {
+      session.endSession();
     }
   },
 );

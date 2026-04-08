@@ -172,6 +172,7 @@ module.exports = {
     };
 
     // Check user có online hay không
+    // has kiểm tra tồn tại 
     io.isUserOnline = function (userId) {
       return onlineUsers.has(userId);
     };
