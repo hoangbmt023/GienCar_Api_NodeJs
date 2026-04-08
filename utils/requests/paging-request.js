@@ -6,7 +6,7 @@ const buildPaging = (query) => {
   let sortBy = query.sortBy || null;
   let sortDir = query.sortDir || "desc";
 
-  // giống Java: Math.max(page - 1, 0)
+  // Math.max(page - 1, 0)
   const safePage = Math.max(page - 1, 0);
 
   // clamp size

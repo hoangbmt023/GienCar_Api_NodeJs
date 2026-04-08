@@ -39,7 +39,7 @@ module.exports = {
 
       const hasRole = requiredRole.some((role) => userRoles.includes(role));
 
-      if (hasRole) {
+      if (hasRole) {  
         return next();
       }
 
