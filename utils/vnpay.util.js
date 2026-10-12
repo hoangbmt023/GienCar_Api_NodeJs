@@ -34,7 +34,6 @@ function createPaymentUrl({ orderId, amount, orderInfo, ip }) {
 
     const sortedParams = sortObject(params);
 
-    // FIX QUAN TRỌNG: build giống Java
     const signData = buildQueryString(sortedParams);
 
     const secureHash = hmacSHA512(config.hashSecret, signData);
@@ -66,7 +65,7 @@ function verifyCallback(params) {
 
 // ================= HELPERS =================
 
-// Sort giống TreeMap
+// sort key theo alphabet giống TreeMap
 function sortObject(obj) {
     return Object.keys(obj)
         .sort()
@@ -76,7 +75,7 @@ function sortObject(obj) {
         }, {});
 }
 
-// Build query giống Java (QUAN TRỌNG NHẤT)
+// Build query chuẩn vnpay key=value&key2=value2 (QUAN TRỌNG NHẤT)
 function buildQueryString(params) {
     return Object.keys(params)
         .map(key => {

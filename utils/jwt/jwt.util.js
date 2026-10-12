@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const ApiError = require("../errors/api-error");
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -29,10 +30,19 @@ const generateRefreshToken = (userId) => {
 };
 
 const verifyAccessToken = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET, {
-    issuer: process.env.JWT_ISSUER,
-    audience: process.env.JWT_AUDIENCE,
-  });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      issuer: process.env.JWT_ISSUER,
+      audience: process.env.JWT_AUDIENCE,
+    });
+
+    return {
+      valid: true,
+      decoded,
+    };
+  } catch (err) {
+    return ApiError.unauthorized(err.message)
+  }
 };
 
 const verifyRefreshToken = (token) => {

@@ -12,9 +12,10 @@ module.exports = {
 
       const token = authHeader.split(" ")[1];
 
-      const decoded = jwt.verifyAccessToken(token);
+      const {decoded} = jwt.verifyAccessToken(token);
 
       const user = await userModel.findById(decoded.sub);
+
       if (!user) {
         return res.status(401).send(resultNoData.fail("User không tồn tại"));
       }
@@ -38,7 +39,7 @@ module.exports = {
 
       const hasRole = requiredRole.some((role) => userRoles.includes(role));
 
-      if (hasRole) {
+      if (hasRole) {  
         return next();
       }
 
